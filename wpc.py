@@ -28,6 +28,7 @@ def l2w(path):
   # Replace duplicated backslashes with just one
   winpath = re.sub("\\\\+", "\\\\", winpath)
 
+  # True if not absolute
   if not winpath.startswith("\\"):
     return winpath
 
@@ -89,7 +90,6 @@ def main(args):
     print(p)
 
   return 0
-
 
 if __name__ == '__main__':
   exit(main(argv))
