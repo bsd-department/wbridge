@@ -4,7 +4,7 @@ import re
 import ntpath
 from os.path import realpath
 from os import environ, curdir
-from sys import argv
+from sys import argv, stderr
 
 def is_url(s):
   return re.search("^[a-zA-Z]+://", s) != None
@@ -68,7 +68,7 @@ def w2l(path):
   return path
 
 def help(name):
-  print(f"USAGE: {name} <windows|linux> [windows/linux paths]...")
+  print(f"USAGE: {name} <windows|linux> [windows/linux paths]...", file=stderr)
 
 
 def main(args):
