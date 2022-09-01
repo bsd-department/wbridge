@@ -34,7 +34,7 @@ def linux_to_windows(path):
   elif not contained_in_cwd(path):
     path = realpath(path)
   else:
-    return translate_slashes(relpath(path), slash)
+    return translate_slashes(relpath(realpath(path)), slash)
 
   # If the path is located on a windows drive
   drive_path = re.search("^/mnt/([a-zA-Z])(/.*)?$", path)
