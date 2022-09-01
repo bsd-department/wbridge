@@ -83,7 +83,7 @@ def main(args):
     path_converter = l2w
   else:
     help(args[0])
-    return 0
+    return 1
 
   for p in map(path_converter, args[2:]):
     print(p)
