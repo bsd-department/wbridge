@@ -9,61 +9,68 @@ from sys import argv, stderr
 def is_url(s):
   return re.search("^[a-zA-Z]+://", s) != None
 
+def translate_slashes(path, slash):
+  return re.sub("[/\\\\]", re.escape(slash), path)
+
 def linux_to_windows(path):
   path = path.strip()
+  # Currently only used for file URLs
+  protocol = ""
+  slash = "\\"
 
-  # As a special case, never touch URLs
+  # As a special case, never touch non-file URLs
   if is_url(path):
-    return path
-
-  winpath = None
-  # If relative, only replace slashes
-  if realpath(path).startswith(realpath(curdir)):
-    winpath = path
+    if not path.lower().startswith("file://"):
+      return path
+    protocol = "file:///"
+    slash = "/"
+    path = path[len("file://"):]
+  # If the path isn't located in the current dir, make an absolute path instead.
+  elif not realpath(path).startswith(realpath(curdir)):
+    path = realpath(path)
   else:
-    winpath = realpath(path)
-
-  # Convert all linux slashes to windows slashes
-  winpath = re.sub("/+", "\\\\", winpath)
-  # Replace duplicated backslashes with just one
-  winpath = re.sub("\\\\+", "\\\\", winpath)
-
-  # True if not absolute
-  if not winpath.startswith("\\"):
-    return winpath
+    return translate_slashes(path, slash)
 
   # If the path is located on a windows drive
-  drive_path = re.search("^\\\\mnt\\\\([a-zA-Z])(\\\\.*)?$", winpath)
+  drive_path = re.search("^/mnt/([a-zA-Z])(/.*)?$", path)
   if drive_path != None:
-    return "{}:{}".format(drive_path[1].upper(), drive_path[2] or '\\')
+    path = "{}:{}".format(drive_path[1].upper(), drive_path[2] or '/')
+    return protocol + translate_slashes(path, slash)
 
   # If the path is located on another WSL distro
-  instance_path = re.search("^\\\\mnt\\\\wsl\\\\instances\\\\(.*)$", winpath)
+  instance_path = re.search("^/mnt/wsl/instances/(.*)$", path)
   if instance_path != None:
-    return "\\\\wsl$\\" + instance_path[1]
+    path = "//wsl$/" + instance_path[1]
+    return protocol + translate_slashes(path, slash)
 
   # Assume the path is located on the current WSL distro
-  return "\\\\wsl$\\" + environ['WSL_DISTRO_NAME'] + winpath
+  path = "//wsl$/" + environ['WSL_DISTRO_NAME'] + path
+  return protocol + translate_slashes(path, slash)
 
 def windows_to_linux(path):
   path = path.strip()
 
+  protocol = ""
+
   # Don't touch URLs
   if is_url(path):
-    return path
-
+    if not path.lower().startswith("file:///"):
+      return path
+    protocol = "file://"
+    path = path[len("file:///"):]
   # Normalize, but also use linux slashes
-  path = ntpath.normpath(path).replace("\\", "/")
+  else:
+    path = ntpath.normpath(path).replace("\\", "/")
 
   drive_path = re.search("^([a-zA-Z]):(/.*)$", path)
   if drive_path != None:
-    return "/mnt/" + drive_path[1].lower() + drive_path[2]
+    return protocol + "/mnt/" + drive_path[1].lower() + drive_path[2]
 
   instance_path = re.search("^//wsl\\$/([^/]+)(/.*)?$", path)
   if instance_path != None:
     if instance_path[1] == environ['WSL_DISTRO_NAME']:
-      return instance_path[2] or '/'
-    return "/mnt/wsl/instances/" + instance_path[1] + (instance_path[2] or '/')
+      return protocol + instance_path[2] or '/'
+    return protocol + "/mnt/wsl/instances/" + instance_path[1] + (instance_path[2] or '/')
 
   # Assume path is relative
   return path
