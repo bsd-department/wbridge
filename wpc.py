@@ -2,7 +2,7 @@
 
 import re
 import ntpath
-from os.path import realpath
+from os.path import realpath, relpath
 from os import environ, curdir
 from sys import argv, stderr
 
@@ -11,6 +11,11 @@ def is_url(s):
 
 def translate_slashes(path, slash):
   return re.sub("[/\\\\]", re.escape(slash), path)
+
+def contained_in_cwd(path):
+  path = realpath(path)
+  current_dir = realpath(curdir)
+  return path != current_dir and path.startswith(current_dir)
 
 def linux_to_windows(path):
   path = path.strip()
@@ -26,10 +31,10 @@ def linux_to_windows(path):
     slash = "/"
     path = path[len("file://"):]
   # If the path isn't located in the current dir, make an absolute path instead.
-  elif not realpath(path).startswith(realpath(curdir)):
+  elif not contained_in_cwd(path):
     path = realpath(path)
   else:
-    return translate_slashes(path, slash)
+    return translate_slashes(relpath(path), slash)
 
   # If the path is located on a windows drive
   drive_path = re.search("^/mnt/([a-zA-Z])(/.*)?$", path)
