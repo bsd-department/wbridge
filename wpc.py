@@ -76,11 +76,13 @@ if __name__ == '__main__':
   if len(argv) <= 2:
     exit(help(argv[0]))
   path_type = argv[1]
+  path_converter = None
   if path_type == "windows":
-    for p in argv[2:]:
-      print(w2l(p))
+    path_converter = w2l
   elif path_type == "linux":
-    for p in argv[2:]:
-      print(l2w(p))
+    path_converter = l2w
   else:
     exit(help(argv[0]))
+
+  for p in map(path_converter, argv[2:]):
+    print(p)
