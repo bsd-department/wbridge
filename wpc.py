@@ -9,7 +9,7 @@ from sys import argv, stderr
 def is_url(s):
   return re.search("^[a-zA-Z]+://", s) != None
 
-def l2w(path):
+def linux_to_windows(path):
   path = path.strip()
 
   # As a special case, never touch URLs
@@ -45,7 +45,7 @@ def l2w(path):
   # Assume the path is located on the current WSL distro
   return "\\\\wsl$\\" + environ['WSL_DISTRO_NAME'] + winpath
 
-def w2l(path):
+def windows_to_linux(path):
   path = path.strip()
 
   # Don't touch URLs
@@ -79,9 +79,9 @@ def main(args):
   path_type = args[1]
   path_converter = None
   if path_type == "windows":
-    path_converter = w2l
+    path_converter = windows_to_linux
   elif path_type == "linux":
-    path_converter = l2w
+    path_converter = linux_to_windows
   else:
     help(args[0])
     return 1
