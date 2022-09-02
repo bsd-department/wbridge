@@ -10,6 +10,13 @@ from sys import argv, stderr
 def is_url(s):
   return re.search("^[a-zA-Z]+://", s) != None
 
+def relative_to_subdir(path, d):
+  """
+  Returns true if path is relative to some subdir of d
+  """
+  subdir_index = len(Path(d).parts)
+  return path.is_relative_to(d) and len(path.parts) > subdir_index
+
 def linux_to_windows(path):
   path = path.strip()
 
@@ -30,18 +37,16 @@ def linux_to_windows(path):
   if is_rel and not rel_path.startswith(".."):
     return rel_path.replace("/", "\\")
 
-  is_mnt = str(Path(*path.parts[:2])) == "/mnt"
-
   # If the path is located on a windows drive
   # /mnt/<drive letter>/rest/of/path
-  if is_mnt and len(path.parts) >= 3 and len(path.parts[2]) == 1:
+  if relative_to_subdir(path, "/mnt") and len(path.parts[2]) == 1:
     drive_letter = path.parts[2].upper()
     # When path leads to the drive root directory
     return str(PureWindowsPath(drive_letter + ":\\").joinpath(*path.parts[3:]))
 
   # When the path points to another wsl distro
   # /mnt/wsl/instances/<distro name>/path
-  if is_mnt and len(path.parts) >= 5 and str(Path(*path.parts[2:4])) == "wsl/instances":
+  if relative_to_subdir(path, "/mnt/wsl/instances"):
     distro_name = path.parts[4]
     return str(PureWindowsPath("\\\\wsl$\\" + distro_name).joinpath(*path.parts[5:]))
 
