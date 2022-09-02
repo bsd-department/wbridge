@@ -1,88 +1,84 @@
 #!/usr/bin/env python3
 
 import re
-import ntpath
-from os.path import realpath, relpath
-from os import environ, curdir
+from pathlib import Path, PureWindowsPath
+from urllib.parse import urlparse
+from os.path import relpath
+from os import environ
 from sys import argv, stderr
 
 def is_url(s):
   return re.search("^[a-zA-Z]+://", s) != None
 
-def translate_slashes(path, slash):
-  return re.sub("[/\\\\]", re.escape(slash), path)
-
-def contained_in_cwd(path):
-  path = realpath(path)
-  current_dir = realpath(curdir)
-  return path != current_dir and path.startswith(current_dir)
-
 def linux_to_windows(path):
   path = path.strip()
-  # Currently only used for file URLs
-  protocol = ""
-  slash = "\\"
 
   # As a special case, never touch non-file URLs
   if is_url(path):
-    if not path.lower().startswith("file://"):
+    scheme, _, urlpath, *_ = urlparse(path)
+    if scheme != "file":
       return path
-    protocol = "file:///"
-    slash = "/"
-    path = path[len("file://"):]
-  # If the path isn't located in the current dir, make an absolute path instead.
-  elif not contained_in_cwd(path):
-    path = realpath(path)
-  else:
-    return translate_slashes(relpath(realpath(path)), slash)
+    # PureWindowsPath.as_uri() doesn't work for UNC paths.
+    return "file:///" + linux_to_windows(urlpath).replace("\\", "/")
+
+  path = Path(path)
+  is_rel = not path.is_absolute()
+
+  path = path.resolve()
+  rel_path = relpath(path)
+
+  if is_rel and not rel_path.startswith(".."):
+    return rel_path.replace("/", "\\")
+
+  is_mnt = str(Path(*path.parts[:2])) == "/mnt"
 
   # If the path is located on a windows drive
-  drive_path = re.search("^/mnt/([a-zA-Z])(/.*)?$", path)
-  if drive_path != None:
-    path = "{}:{}".format(drive_path[1].upper(), drive_path[2] or '/')
-    return protocol + translate_slashes(path, slash)
+  # /mnt/<drive letter>/rest/of/path
+  if is_mnt and len(path.parts) >= 3 and len(path.parts[2]) == 1:
+    drive_letter = path.parts[2].upper()
+    # When path leads to the drive root directory
+    return str(PureWindowsPath(drive_letter + ":\\").joinpath(*path.parts[3:]))
 
-  # If the path is located on another WSL distro
-  instance_path = re.search("^/mnt/wsl/instances/(.*)$", path)
-  if instance_path != None:
-    path = "//wsl$/" + instance_path[1]
-    return protocol + translate_slashes(path, slash)
+  # When the path points to another wsl distro
+  # /mnt/wsl/instances/<distro name>/path
+  if is_mnt and len(path.parts) >= 5 and str(Path(*path.parts[2:4])) == "wsl/instances":
+    distro_name = path.parts[4]
+    return str(PureWindowsPath("\\\\wsl$\\" + distro_name).joinpath(*path.parts[5:]))
 
-  # Assume the path is located on the current WSL distro
-  path = "//wsl$/" + environ['WSL_DISTRO_NAME'] + path
-  return protocol + translate_slashes(path, slash)
+  # When the path points to the current distro
+  return str(PureWindowsPath("\\\\wsl$\\" + environ['WSL_DISTRO_NAME']).joinpath(path))
 
 def windows_to_linux(path):
   path = path.strip()
 
-  protocol = ""
-
-  # Don't touch URLs
   if is_url(path):
-    if not path.lower().startswith("file:///"):
+    scheme, _, urlpath, *_ = urlparse(path)
+    if scheme != "file":
       return path
-    protocol = "file://"
-    path = path[len("file:///"):]
-  # Normalize, but also use linux slashes
-  else:
-    path = ntpath.normpath(path).replace("\\", "/")
+    # Skip the leading slash in URL path
+    return Path(windows_to_linux(urlpath[1:])).as_uri()
 
-  drive_path = re.search("^([a-zA-Z]):(/.*)$", path)
+  path = PureWindowsPath(path)
+  if not path.is_absolute():
+    return path.as_posix()
+
+  drive_path = re.search("^([a-zA-Z]):$", path.drive)
   if drive_path != None:
-    return protocol + "/mnt/" + drive_path[1].lower() + drive_path[2]
+    return str(Path("/mnt/" + drive_path[1].lower()).joinpath(*path.parts[1:]))
 
-  instance_path = re.search("^//wsl\\$/([^/]+)(/.*)?$", path)
+  instance_path = re.search("^\\\\\\\\wsl\\$\\\\(.+)$", path.drive)
   if instance_path != None:
     if instance_path[1] == environ['WSL_DISTRO_NAME']:
-      return protocol + instance_path[2] or '/'
-    return protocol + "/mnt/wsl/instances/" + instance_path[1] + (instance_path[2] or '/')
+      return str(Path("/").joinpath(*path.parts[1:]))
+    return str(Path("/mnt/wsl/instances/" + instance_path[1]).joinpath(*path.parts[1:]))
 
-  # Assume path is relative
-  return path
+  # At this point, path is probably some non-WSL UNC path.
+  # Since there's no clear way of converting those to WSL paths,
+  # just return them instead.
+  return str(path)
 
 def help(name):
   print(f"USAGE: {name} <windows|linux> [windows/linux paths]...", file=stderr)
-
 
 def main(args):
   if len(args) <= 2:
