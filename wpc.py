@@ -14,7 +14,7 @@ def is_url(s):
 
 def relative_to_subdir(path, directory):
     """
-    Returns true if path is relative to some subdir of d
+    Returns true if path is relative to some subdir of directory
     """
     subdir_index = len(Path(directory).parts)
     return path.is_relative_to(directory) and len(path.parts) > subdir_index
