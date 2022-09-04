@@ -10,6 +10,10 @@ windows paths/file URLS or vice versa.
 
 [^1]: Only works after following [this guide](https://askubuntu.com/a/1395784).
 
+## Requirements
+- Python 3.8+
+- WSL2
+
 ## Usage
 The first argument to `wpc.py` is the type of paths to be converted. Can be
 either `windows` or `linux`. The rest are either path or file urls to be
