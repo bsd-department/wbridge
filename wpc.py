@@ -35,9 +35,8 @@ def linux_to_windows(path):
     is_rel = not path.is_absolute()
 
     path = path.resolve()
-    rel_path = relpath(path)
 
-    if is_rel and not rel_path.startswith(".."):
+    if is_rel and not (rel_path := relpath(path)).startswith(".."):
         return rel_path.replace("/", "\\")
 
     # If the path is located on a windows drive
@@ -74,17 +73,18 @@ def windows_to_linux(path):
     if not path.is_absolute():
         return path.as_posix()
 
-    drive_path = re.search("^([a-zA-Z]):$", path.drive)
-    if drive_path is not None:
-        return str(Path("/mnt/" + drive_path[1].lower())
-                   .joinpath(*path.parts[1:]))
-
-    instance_path = re.search("^\\\\\\\\wsl\\$\\\\(.+)$", path.drive)
-    if instance_path is not None:
+    path_prefix = None
+    if (drive_path := re.search("^([a-zA-Z]):$", path.drive)) is not None:
+        path_prefix = "/mnt/" + drive_path[1].lower()
+    elif (instance_path := re.search("^\\\\\\\\wsl\\$\\\\(.+)$",
+                                     path.drive)) is not None:
         if instance_path[1] == environ['WSL_DISTRO_NAME']:
-            return str(Path("/").joinpath(*path.parts[1:]))
-        return str(Path("/mnt/wsl/instances/" + instance_path[1])
-                   .joinpath(*path.parts[1:]))
+            path_prefix = "/"
+        else:
+            path_prefix = "/mnt/wsl/instances/" + instance_path[1]
+
+    if path_prefix is not None:
+        return str(Path(path_prefix).joinpath(*path.parts[1:]))
 
     # At this point, path is probably some non-WSL UNC path.
     # Since there's no clear way of converting those to WSL paths,
