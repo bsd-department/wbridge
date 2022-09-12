@@ -4,9 +4,10 @@ import re
 import subprocess
 from pathlib import Path, PureWindowsPath
 from urllib.parse import urlparse
-from os.path import relpath
+from os.path import relpath, basename
 from os import environ
 from sys import argv, stderr
+from argparse import ArgumentParser, REMAINDER
 
 
 def is_url(s):
@@ -106,7 +107,8 @@ def execute_command(*args, command_mapper=None, path_mapper=linux_to_windows):
     unprocessed_args, args = partition_command(*args)
     if command_mapper is not None:
         unprocessed_args, args = command_mapper(unprocessed_args, args)
-    subprocess.run(unprocessed_args + list(map(path_mapper, args)))
+    proc = subprocess.run(unprocessed_args + list(map(path_mapper, args)))
+    return proc.returncode
 
 
 def run_with_cmd(unprocessed_args, args):
@@ -117,25 +119,75 @@ def run_with_cmd(unprocessed_args, args):
     return ["cmd.exe", "/c"] + unprocessed_args, args
 
 
-def main(args):
-    if len(args) <= 2:
-        help(args[0])
-        return 1
-    path_type = args[1]
-    path_converter = None
-    if path_type == "windows":
-        path_converter = windows_to_linux
-    elif path_type == "linux":
-        path_converter = linux_to_windows
-    else:
-        help(args[0])
+def handle_run(args):
+    command_mapper = run_with_cmd
+    path_mapper = linux_to_windows
+    if args.from_windows:
+        command_mapper = None
+        path_mapper = windows_to_linux
+
+    command = args.command
+    if len(command) == 0:
+        print("ERROR: Command cannot be empty.", file=stderr)
         return 1
 
-    for p in map(path_converter, args[2:]):
-        print(p)
+    if command[0] == "--":
+        # Because of argparse.REMAINDER usage, leading -- has to be removed
+        # manually. Non leading -- serves as a unprocessed argument separator,
+        # so it's fine.
+        command = command[1:]
+
+    return execute_command(*command,
+                           command_mapper=command_mapper,
+                           path_mapper=path_mapper)
+
+
+def handle_convert(args):
+    path_mapper = linux_to_windows
+    line_ender = '\n'
+    if args.from_windows:
+        path_mapper = windows_to_linux
+
+    if args.null:
+        line_ender = '\0'
+
+    for p in map(path_mapper, args.paths):
+        print(p, end=line_ender)
 
     return 0
 
 
+def create_argparser():
+    parser = ArgumentParser(exit_on_error=False)
+
+    conversion_group = parser.add_mutually_exclusive_group()
+    conversion_group.add_argument("-l", "--from-linux",
+                                  action="store_true",
+                                  help="Convert linux paths to windows paths. This is done by default")
+    conversion_group.add_argument("-w", "--from-windows",
+                                  action="store_true",
+                                  help="Convert windows paths to linux paths")
+
+    subparsers = parser.add_subparsers(required=True)
+
+    run_parser = subparsers.add_parser("run")
+    run_parser.add_argument("command",
+                            nargs=REMAINDER,
+                            help='Command to be executed, with translated paths')
+    run_parser.set_defaults(handler=handle_run)
+
+    convert_parser = subparsers.add_parser("convert")
+    convert_parser.add_argument("-0", "--null",
+                                action='store_true',
+                                help='Separate paths with the null character instead of newline')
+    convert_parser.add_argument("paths",
+                                nargs='+',
+                                help='Paths to be converted.')
+    convert_parser.set_defaults(handler=handle_convert)
+
+    return parser
+
+
 if __name__ == '__main__':
-    exit(main(argv))
+    args = create_argparser().parse_args()
+    exit(args.handler(args))
