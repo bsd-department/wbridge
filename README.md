@@ -7,6 +7,7 @@ windows paths/file URLS or vice versa.
 - Supports non-existing paths, unlike built-in `wslpath`.
 - Supports file URLs
 - Supports paths to other WSL distros[^1]
+- Supports execution of programs with automatic command line path conversions.
 
 [^1]: Only works after following [this guide](https://askubuntu.com/a/1395784).
 
@@ -15,7 +16,37 @@ windows paths/file URLS or vice versa.
 - WSL2
 
 ## Usage
-The first argument to `wpc.py` is the type of paths to be converted. Can be
-either `windows` or `linux`. The rest are either path or file urls to be
-converted. Non-path and non-file URLs will be printed without changes(unless
-they contain trailing or leading whitespace).
+
+There are 2 modes of operation: path conversion of a single or multiple paths or
+command execution with conversion of paths in command line arguments, which
+works kind of like `sudo`.
+
+### Examples
+
+Convert linux paths to windows paths:
+
+``` sh
+wpc.py convert /etc/passwd /mnt/c/Users/User/Desktop/file.txt /mnt/wsl/instances/distro/etc/hosts
+# Output:
+# \\wsl$\<current distro name>\etc\passwd
+# C:\Users\User\Desktop\file.txt
+# \\wsl$\distro\etc\hosts
+```
+
+Convert windows paths to linux paths:
+
+``` sh
+wpc.py -w convert C:\Windows \\wsl$\<current-distro>\etc\sudoers D:/some/path
+# Output:
+# /mnt/c/Windows
+# /etc/sudoers
+# /mnt/d/some/path
+```
+
+Run windows programs, with command line paths translated:
+
+``` sh
+wpc.py run mpv /mnt/d/file.mp4
+# Equivalent to:
+cmd.exe /c mpv D:\file.mp4
+```
