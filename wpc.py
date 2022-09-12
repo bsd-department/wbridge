@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import re
+import subprocess
 from pathlib import Path, PureWindowsPath
 from urllib.parse import urlparse
 from os.path import relpath
@@ -92,9 +93,28 @@ def windows_to_linux(path):
     return str(path)
 
 
-def help(name):
-    print(f"USAGE: {name} <windows|linux> [windows/linux paths]...",
-          file=stderr)
+def partition_command(*args):
+    unprocessed_args, args = [args[0]], args[1:]
+    if "--" in args:
+        unprocessed_marker = args.index("--")
+        unprocessed_args += args[0:unprocessed_marker]
+        args = args[unprocessed_marker + 1:]
+    return unprocessed_args, list(args)
+
+
+def execute_command(*args, command_mapper=None, path_mapper=linux_to_windows):
+    unprocessed_args, args = partition_command(*args)
+    if command_mapper is not None:
+        unprocessed_args, args = command_mapper(unprocessed_args, args)
+    subprocess.run(unprocessed_args + list(map(path_mapper, args)))
+
+
+def run_with_cmd(unprocessed_args, args):
+    """
+    Makes sure the command is run through cmd.exe.
+    Some windows programs require a windows shell for command line output.
+    """
+    return ["cmd.exe", "/c"] + unprocessed_args, args
 
 
 def main(args):
