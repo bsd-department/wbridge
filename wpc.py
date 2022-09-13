@@ -4,7 +4,6 @@ import re
 import subprocess
 from pathlib import Path, PureWindowsPath
 from urllib.parse import urlparse
-from os.path import relpath
 from os import environ
 from sys import stderr
 from argparse import ArgumentParser, REMAINDER
@@ -23,10 +22,6 @@ def relative_to_subdir(path, directory):
 
 
 def linux_to_windows(path):
-    # Not a path - return unchanged
-    if not ("/" in path or Path(path).exists()):
-        return path
-
     path = path.strip()
 
     # As a special case, never touch non-file URLs
@@ -42,12 +37,12 @@ def linux_to_windows(path):
 
     path = path.resolve()
 
+    if is_rel and path.is_relative_to(Path.cwd()):
+        return str(path.relative_to(Path.cwd()))
+
     # If the path is located on a windows drive
     # /mnt/<drive letter>/rest/of/path
     if relative_to_subdir(path, "/mnt") and len(path.parts[2]) == 1:
-        # Only support relative paths on windows drives
-        if is_rel:
-            return relpath(path).replace("/", "\\")
         drive_letter = path.parts[2].upper()
         # When path leads to the drive root directory
         return str(PureWindowsPath(drive_letter + ":\\")
@@ -98,7 +93,7 @@ def windows_to_linux(path):
     return str(path)
 
 
-def partition_command(*args):
+def partition_command(args):
     unprocessed_args, args = [args[0]], args[1:]
     if "--" in args:
         unprocessed_marker = args.index("--")
@@ -107,28 +102,27 @@ def partition_command(*args):
     return unprocessed_args, list(args)
 
 
-def execute_command(*args, command_mapper=None, path_mapper=linux_to_windows):
-    unprocessed_args, args = partition_command(*args)
-    if command_mapper is not None:
-        unprocessed_args, args = command_mapper(unprocessed_args, args)
-    proc = subprocess.run(unprocessed_args + list(map(path_mapper, args)))
+def powershell_quote(argument):
+    return "'{}'".format(argument.replace("'", "''"))
+
+
+def powershell_command_executor(command, args):
+    command = ["powershell.exe", "-NoProfile", "-Command"] + command
+    args = list(map(powershell_quote, map(linux_to_windows, args)))
+    proc = subprocess.run(command + args)
     return proc.returncode
 
 
-def run_with_cmd(unprocessed_args, args):
-    """
-    Makes sure the command is run through cmd.exe.
-    Some windows programs require a windows shell for command line output.
-    """
-    return ["cmd.exe", "/c"] + unprocessed_args, args
+def linux_command_executor(command, args):
+    """Executes a linux command directly."""
+    proc = subprocess.run(command + list(map(windows_to_linux, args)))
+    return proc.returncode
 
 
 def handle_run(args):
-    command_mapper = run_with_cmd
-    path_mapper = linux_to_windows
+    command_executor = powershell_command_executor
     if args.from_windows:
-        command_mapper = None
-        path_mapper = windows_to_linux
+        command_executor = linux_command_executor
 
     command = args.command
     if len(command) == 0:
@@ -141,9 +135,7 @@ def handle_run(args):
         # so it's fine.
         command = command[1:]
 
-    return execute_command(*command,
-                           command_mapper=command_mapper,
-                           path_mapper=path_mapper)
+    return command_executor(*partition_command(command))
 
 
 def handle_convert(args):

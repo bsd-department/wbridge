@@ -48,5 +48,5 @@ Run windows programs, with command line paths translated:
 ``` sh
 wpc.py run mpv /mnt/d/file.mp4
 # Equivalent to:
-cmd.exe /c mpv D:\file.mp4
+powershell.exe -NoProfile -Command mpv 'D:\file.mp4'
 ```
