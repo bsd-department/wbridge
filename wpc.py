@@ -4,9 +4,9 @@ import re
 import subprocess
 from pathlib import Path, PureWindowsPath
 from urllib.parse import urlparse
-from os.path import relpath, basename
+from os.path import relpath
 from os import environ
-from sys import argv, stderr
+from sys import stderr
 from argparse import ArgumentParser, REMAINDER
 
 
