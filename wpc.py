@@ -38,12 +38,12 @@ def linux_to_windows(path):
 
     path = path.resolve()
 
-    if is_rel and not (rel_path := relpath(path)).startswith(".."):
-        return rel_path.replace("/", "\\")
-
     # If the path is located on a windows drive
     # /mnt/<drive letter>/rest/of/path
     if relative_to_subdir(path, "/mnt") and len(path.parts[2]) == 1:
+        # Only support relative paths on windows drives
+        if is_rel:
+            return relpath(path).replace("/", "\\")
         drive_letter = path.parts[2].upper()
         # When path leads to the drive root directory
         return str(PureWindowsPath(drive_letter + ":\\")
