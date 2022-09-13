@@ -23,6 +23,10 @@ def relative_to_subdir(path, directory):
 
 
 def linux_to_windows(path):
+    # Not a path - return unchanged
+    if not ("/" in path or Path(path).exists()):
+        return path
+
     path = path.strip()
 
     # As a special case, never touch non-file URLs
@@ -37,10 +41,6 @@ def linux_to_windows(path):
     is_rel = not path.is_absolute()
 
     path = path.resolve()
-
-    # Command line options are treated like non-existent files by this program.
-    if is_rel and not path.exists():
-        return relpath(path).replace("/", "\\")
 
     # If the path is located on a windows drive
     # /mnt/<drive letter>/rest/of/path
