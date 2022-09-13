@@ -38,6 +38,10 @@ def linux_to_windows(path):
 
     path = path.resolve()
 
+    # Command line options are treated like non-existent files by this program.
+    if is_rel and not path.exists():
+        return relpath(path).replace("/", "\\")
+
     # If the path is located on a windows drive
     # /mnt/<drive letter>/rest/of/path
     if relative_to_subdir(path, "/mnt") and len(path.parts[2]) == 1:
