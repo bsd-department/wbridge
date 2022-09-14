@@ -8,6 +8,7 @@ windows paths/file URLS or vice versa.
 - Supports file URLs
 - Supports paths to other WSL distros[^1]
 - Supports execution of programs with automatic command line path conversions.
+- Supports opening files and URLs using the default application set under Windows.
 
 [^1]: Only works after following [this guide](https://askubuntu.com/a/1395784).
 
@@ -49,4 +50,11 @@ Run windows programs, with command line paths translated:
 wpc.py run mpv /mnt/d/file.mp4
 # Equivalent to:
 powershell.exe -NoProfile -Command mpv 'D:\file.mp4'
+```
+
+Open a file or URL using the default Windows application:
+
+``` sh
+wpc.py open image.jpg
+wpc.py open https://example.com
 ```
