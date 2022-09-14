@@ -105,13 +105,24 @@ def partition_command(args):
     return command, list(args)
 
 
-def powershell_quote(argument):
+def powershell_argument_quote(argument):
     return "'{}'".format(argument.replace("'", "''"))
 
 
+def powershell_cwd_quote(argument):
+    """
+    Powershell doesn't understand paths with unescaped square brackets.
+    Of course, the character used to escape square brackets is a backtick.
+    Because why not!
+    """
+    return re.sub("([\\[\\]])", "`\\1", powershell_argument_quote(argument))
+
+
 def powershell_command_executor(command, args):
+    cwd = powershell_cwd_quote(linux_to_windows(str(Path.cwd())))
+    command[0] = f"Set-Location {cwd}; " + command[0]
     command = ["powershell.exe", "-NoProfile", "-Command"] + command
-    args = list(map(powershell_quote, map(linux_to_windows, args)))
+    args = list(map(powershell_argument_quote, map(linux_to_windows, args)))
     proc = subprocess.run(command + args)
     return proc.returncode
 
