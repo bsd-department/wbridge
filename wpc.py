@@ -143,6 +143,17 @@ def handle_run(args):
     return command_executor(*partition_command(command))
 
 
+def handle_open(args):
+    if args.from_windows:
+        print("ERROR: This command can only be used from linux.",
+              file=stderr)
+        return 1
+
+    # Specyfying working directory is necessary if CWD contains square brackets
+    command = ["start", "-WorkingDirectory", ".", "--", args.file_or_url]
+    return powershell_command_executor(*partition_command(command))
+
+
 def handle_convert(args):
     path_mapper = linux_to_windows
     line_ender = '\n'
@@ -176,6 +187,11 @@ def create_argparser():
                             nargs=REMAINDER,
                             help='Command to be executed, with translated paths')
     run_parser.set_defaults(handler=handle_run)
+
+    open_parser = subparsers.add_parser("open")
+    open_parser.add_argument("file_or_url",
+                             help='The file or URL to be opened by Windows')
+    open_parser.set_defaults(handler=handle_open)
 
     convert_parser = subparsers.add_parser("convert")
     convert_parser.add_argument("-0", "--null",
