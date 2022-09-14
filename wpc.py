@@ -94,12 +94,15 @@ def windows_to_linux(path):
 
 
 def partition_command(args):
-    unprocessed_args, args = [args[0]], args[1:]
+    """
+    Splits the command line into the command and argument parts.
+    """
+    command, args = [args[0]], args[1:]
     if "--" in args:
-        unprocessed_marker = args.index("--")
-        unprocessed_args += args[0:unprocessed_marker]
-        args = args[unprocessed_marker + 1:]
-    return unprocessed_args, list(args)
+        command_end_marker = args.index("--")
+        command += args[0:command_end_marker]
+        args = args[command_end_marker + 1:]
+    return command, list(args)
 
 
 def powershell_quote(argument):
