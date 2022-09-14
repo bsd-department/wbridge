@@ -38,7 +38,7 @@ def linux_to_windows(path):
     path = path.resolve()
 
     if is_rel and path.is_relative_to(Path.cwd()):
-        return str(path.relative_to(Path.cwd()))
+        return str(path.relative_to(Path.cwd())).replace("/", "\\")
 
     # If the path is located on a windows drive
     # /mnt/<drive letter>/rest/of/path
