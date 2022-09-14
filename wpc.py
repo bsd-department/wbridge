@@ -182,18 +182,26 @@ def create_argparser():
 
     subparsers = parser.add_subparsers(required=True)
 
-    run_parser = subparsers.add_parser("run")
+    run_parser = subparsers.add_parser("run", description="""
+    Execute a command with command line arguments converted.
+    If '--' was passed as an argument, then only arguments after it are
+    converted. If you wish to pass '--' directly to the command, pass it twice.
+    """)
     run_parser.add_argument("command",
                             nargs=REMAINDER,
-                            help='Command to be executed, with translated paths')
+                            help='Command to be executed, with translated paths',)
     run_parser.set_defaults(handler=handle_run)
 
-    open_parser = subparsers.add_parser("open")
+    open_parser = subparsers.add_parser("open", description="""
+    Open a file or URL with the default handler on Windows.
+    """)
     open_parser.add_argument("file_or_url",
                              help='The file or URL to be opened by Windows')
     open_parser.set_defaults(handler=handle_open)
 
-    convert_parser = subparsers.add_parser("convert")
+    convert_parser = subparsers.add_parser("convert", description="""
+    Convert one or more paths.
+    """)
     convert_parser.add_argument("-0", "--null",
                                 action='store_true',
                                 help='Separate paths with the null character instead of newline')
