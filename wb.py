@@ -189,7 +189,7 @@ def create_argparser():
     """)
     run_parser.add_argument("command",
                             nargs=REMAINDER,
-                            help='Command to be executed, with translated paths',)
+                            help='Command to be executed, with translated paths')
     run_parser.set_defaults(handler=handle_run)
 
     open_parser = subparsers.add_parser("open", description="""
