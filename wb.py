@@ -170,7 +170,9 @@ def handle_convert(args):
 
 
 def create_argparser():
-    parser = ArgumentParser(exit_on_error=False)
+    parser = ArgumentParser(exit_on_error=False, description="""
+    WBridge - enhanced WSL/Windows interop
+    """)
 
     conversion_group = parser.add_mutually_exclusive_group()
     conversion_group.add_argument("-l", "--from-linux",
