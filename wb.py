@@ -4,9 +4,10 @@ import re
 import subprocess
 from pathlib import Path, PureWindowsPath
 from urllib.parse import urlparse
-from os import environ
+from os import environ, chmod, makedirs
 from sys import stderr
 from argparse import ArgumentParser, REMAINDER
+from textwrap import dedent
 
 
 def is_url(s):
@@ -124,6 +125,30 @@ def linux_command_executor(command, args):
     return proc.returncode
 
 
+def save_command(command, args):
+    full_command = command + ["--"] + args
+    script = f'''\
+    #!/bin/sh
+
+    exec {Path(__file__).resolve()} run {" ".join(full_command)} "$@"
+    '''
+    script_path = Path.home().joinpath("bin", command[0])
+    makedirs(script_path.parent, exist_ok=True)
+
+    with script_path.open('w') as f:
+        f.write(dedent(script))
+
+    chmod(script_path, 0o755)
+
+    print(f"Command successfully saved in '{script_path}'")
+    if str(script_path.parent) not in environ["PATH"].split(":"):
+        print(dedent('''\
+        WARNING: It appears ~/bin is not currently in $PATH
+                 Consider adding this line somewhere to your .bashrc or .profile:
+                 export PATH=~/bin:"$PATH"
+        '''), end='')
+
+
 def handle_run(args):
     command_executor = powershell_command_executor
     if args.from_windows:
@@ -139,6 +164,10 @@ def handle_run(args):
         # manually. Non leading -- serves as a unprocessed argument separator,
         # so it's fine.
         command = command[1:]
+
+    if args.save:
+        save_command(*partition_command(command))
+        return 0
 
     return command_executor(*partition_command(command))
 
@@ -189,6 +218,9 @@ def create_argparser():
     If '--' was passed as an argument, then only arguments after it are
     converted. If you wish to pass '--' directly to the command, pass it twice.
     """)
+    run_parser.add_argument('-s', '--save',
+                            action="store_true",
+                            help="Instead of running, save the command as a shell script in ~/bin")
     run_parser.add_argument("command",
                             nargs=REMAINDER,
                             help='Command to be executed, with translated paths')
