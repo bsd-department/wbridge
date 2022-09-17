@@ -2,7 +2,7 @@
 
 import re
 import subprocess
-from pathlib import Path, PureWindowsPath
+from pathlib import PosixPath as Path, PureWindowsPath
 from urllib.parse import urlparse
 from os import environ, chmod, makedirs
 from sys import stderr
