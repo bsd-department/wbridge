@@ -1,6 +1,6 @@
 # WBridge
 
-WBridge is a command utility designed to enhance the experience of interacting
+WBridge is a command line utility designed to enhance the experience of interacting
 with Windows from WSL.
 
 ## Features
