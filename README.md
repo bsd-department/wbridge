@@ -26,6 +26,15 @@ wb.py run mpv /mnt/d/file.mp4
 powershell.exe -NoProfile -Command mpv 'D:\file.mp4'
 ```
 
+Save a command as a shell script in ~/bin to run it directly
+
+``` sh
+wb.py run --save mpv
+mpv some/file.mp4
+# Equivalent to
+wb.py run mpv -- some/file.mp4
+```
+
 Open a file or URL using the default Windows application:
 
 ``` sh
