@@ -125,12 +125,13 @@ def linux_command_executor(command, args):
     return proc.returncode
 
 
-def save_command(command, args):
-    full_command = command + ["--"] + args
+def save_command(command):
+    if "--" not in command:
+        command.append("--")
     script = f'''\
     #!/bin/sh
 
-    exec {Path(__file__).resolve()} run {" ".join(full_command)} "$@"
+    exec {Path(__file__).resolve()} run {" ".join(command)} "$@"
     '''
     script_path = Path.home().joinpath("bin", command[0])
     makedirs(script_path.parent, exist_ok=True)
@@ -166,7 +167,7 @@ def handle_run(args):
         command = command[1:]
 
     if args.save:
-        save_command(*partition_command(command))
+        save_command(command)
         return 0
 
     return command_executor(*partition_command(command))
