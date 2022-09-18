@@ -167,6 +167,10 @@ def handle_run(args):
         command = command[1:]
 
     if args.save:
+        if args.from_windows:
+            print("ERROR: Saving the command --from-windows isn't supported yet.",
+                  file=stderr)
+            return 1
         save_command(command)
         return 0
 
