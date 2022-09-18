@@ -168,7 +168,8 @@ def handle_run(args):
 
     if args.save:
         if args.from_windows:
-            print("ERROR: Saving the command --from-windows isn't supported yet.",
+            print("ERROR: Saving the command and passing --from-windows"
+                  "isn't supported yet.",
                   file=stderr)
             return 1
         save_command(command)
@@ -211,7 +212,8 @@ def create_argparser():
     conversion_group = parser.add_mutually_exclusive_group()
     conversion_group.add_argument("-l", "--from-linux",
                                   action="store_true",
-                                  help="Convert linux paths to windows paths. This is done by default")
+                                  help="Convert linux paths to windows paths. "
+                                  "This is done by default")
     conversion_group.add_argument("-w", "--from-windows",
                                   action="store_true",
                                   help="Convert windows paths to linux paths")
@@ -225,7 +227,8 @@ def create_argparser():
     """)
     run_parser.add_argument('-s', '--save',
                             action="store_true",
-                            help="Instead of running, save the command as a shell script in ~/bin")
+                            help="Instead of running, save the command as "
+                            "a shell script in ~/bin")
     run_parser.add_argument("command",
                             nargs=REMAINDER,
                             help='Command to be executed, with translated paths')
@@ -243,7 +246,8 @@ def create_argparser():
     """)
     convert_parser.add_argument("-0", "--null",
                                 action='store_true',
-                                help='Separate paths with the null character instead of newline')
+                                help='Separate paths with the null character '
+                                'instead of newline')
     convert_parser.add_argument("paths",
                                 nargs='+',
                                 help='Paths to be converted.')
