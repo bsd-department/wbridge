@@ -168,7 +168,7 @@ def handle_run(args):
 
     if args.save:
         if args.from_windows:
-            print("ERROR: Saving the command and passing --from-windows"
+            print("ERROR: Saving the command and passing --from-windows "
                   "isn't supported yet.",
                   file=stderr)
             return 1
