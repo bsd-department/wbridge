@@ -113,10 +113,14 @@ def powershell_quote(argument):
 
 def powershell_command_executor(command, args):
     cwd = powershell_quote(linux_to_windows(str(Path.cwd())))
-    command[0] = f"Set-Location -LiteralPath {cwd}; " + command[0]
-    command = ["powershell.exe", "-NoProfile", "-Command"] + command
-    args = list(map(powershell_quote, map(linux_to_windows, args)))
-    proc = subprocess.run(command + args)
+    command, *unprocessed_args = command
+    command = f"Set-Location -LiteralPath {cwd}; " + command
+    args = list(map(powershell_quote,
+                    unprocessed_args + list(map(linux_to_windows, args))))
+    proc = subprocess.run(["powershell.exe",
+                           "-NoProfile",
+                           "-Command",
+                           command] + args)
     return proc.returncode
 
 
