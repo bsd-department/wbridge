@@ -2,6 +2,7 @@
 
 import re
 import subprocess
+import shlex
 from pathlib import PosixPath as Path, PureWindowsPath
 from urllib.parse import urlparse
 from os import environ, chmod, makedirs
@@ -128,10 +129,12 @@ def linux_command_executor(command, args):
 def save_command(command):
     if "--" not in command:
         command.append("--")
+
+    wb_path = shlex.quote(str(Path(__file__).resolve()))
     script = f'''\
     #!/bin/sh
 
-    exec {Path(__file__).resolve()} run {" ".join(command)} "$@"
+    exec {wb_path} run {shlex.join(command)} "$@"
     '''
     script_path = Path.home().joinpath("bin", command[0])
     makedirs(script_path.parent, exist_ok=True)
