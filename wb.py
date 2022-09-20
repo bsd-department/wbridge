@@ -241,6 +241,7 @@ def handle_screenshot(args):
 
         cmd = list(map(linux_to_windows, [f.name, output_name]))
         proc = subprocess.run(["powershell.exe",
+                               "-NoProfile",
                                "-ExecutionPolicy", "Bypass",
                                "-File"] + cmd)
         proc.check_returncode()
