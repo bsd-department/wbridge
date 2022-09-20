@@ -9,6 +9,8 @@ from os import environ, chmod, makedirs
 from sys import stderr
 from argparse import ArgumentParser, REMAINDER
 from textwrap import dedent
+from tempfile import NamedTemporaryFile
+from datetime import datetime
 
 
 def is_url(s):
@@ -193,6 +195,58 @@ def handle_open(args):
     return powershell_command_executor(*partition_command(command))
 
 
+def handle_screenshot(args):
+    if args.from_windows:
+        print("ERROR: This command can only be used from linux.",
+              file=stderr)
+        return 1
+
+    script = '''\
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+
+    function screenshot($path) {
+        $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+        $bmp = New-Object Drawing.Bitmap $bounds.Width, $bounds.Height
+        $graphics = [Drawing.Graphics]::FromImage($bmp)
+
+        $null = $graphics.CopyFromScreen($bounds.Location,
+                                         [Drawing.Point]::Empty,
+                                         $bounds.Size)
+
+        $bmp.Save($path)
+
+        $graphics.Dispose()
+        $bmp.Dispose()
+    }
+    screenshot $($args[0])
+    '''
+
+    if args.raw:
+        if args.pattern is None:
+            print("ERROR: File name is required in raw mode.",
+                  file=stderr)
+            return 1
+        output_name = args.pattern
+    else:
+        pattern = args.pattern or "%Y-%m-%d %H.%M.%S.png"
+
+        output_name = datetime.now().strftime(pattern)
+
+    output_name = str(Path(output_name).resolve())
+
+    with NamedTemporaryFile('w', suffix='.ps1') as f:
+        f.write(dedent(script))
+        f.flush()
+
+        cmd = list(map(linux_to_windows, [f.name, output_name]))
+        proc = subprocess.run(["powershell.exe",
+                               "-ExecutionPolicy", "Bypass",
+                               "-File"] + cmd)
+        proc.check_returncode()
+    return 0
+
+
 def handle_convert(args):
     path_mapper = linux_to_windows
     line_ender = '\n'
@@ -216,7 +270,7 @@ def create_argparser():
     conversion_group = parser.add_mutually_exclusive_group()
     conversion_group.add_argument("-l", "--from-linux",
                                   action="store_true",
-                                  help="Convert linux paths to windows paths. "
+                                  help="Convert linux paths to windows paths"
                                   "This is done by default")
     conversion_group.add_argument("-w", "--from-windows",
                                   action="store_true",
@@ -244,6 +298,22 @@ def create_argparser():
     open_parser.add_argument("file_or_url",
                              help='The file or URL to be opened by Windows')
     open_parser.set_defaults(handler=handle_open)
+
+    screenshot_parser = subparsers.add_parser("screenshot", description="""
+    Take a screenshot and save it in the current directory.
+    """)
+
+    screenshot_parser.add_argument('pattern',
+                                   nargs='?',
+                                   help='Output file name. Can contain '
+                                   'strftime format codes.')
+
+    screenshot_parser.add_argument('-r', '--raw',
+                                   action='store_true',
+                                   help="Interpret file argument literally, "
+                                   "without strftime")
+
+    screenshot_parser.set_defaults(handler=handle_screenshot)
 
     convert_parser = subparsers.add_parser("convert", description="""
     Convert one or more paths.
