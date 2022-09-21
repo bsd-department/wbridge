@@ -55,7 +55,7 @@ wb.py convert /etc/passwd /mnt/c/Users/User/Desktop/file.txt /mnt/wsl/instances/
 Convert windows paths to linux paths:
 
 ``` sh
-wb.py -w convert C:\Windows \\wsl$\<current-distro>\etc\sudoers D:/some/path
+wb.py convert -w C:\Windows \\wsl$\<current-distro>\etc\sudoers D:/some/path
 # Output:
 # /mnt/c/Windows
 # /etc/sudoers

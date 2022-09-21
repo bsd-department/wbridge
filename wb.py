@@ -185,22 +185,12 @@ def handle_run(args):
 
 
 def handle_open(args):
-    if args.from_windows:
-        print("ERROR: This command can only be used from linux.",
-              file=stderr)
-        return 1
-
     # Specyfying working directory is necessary if CWD contains square brackets
     command = ["start", "-WorkingDirectory", ".", "--", args.file_or_url]
     return powershell_command_executor(*partition_command(command))
 
 
 def handle_screenshot(args):
-    if args.from_windows:
-        print("ERROR: This command can only be used from linux.",
-              file=stderr)
-        return 1
-
     script = '''\
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
@@ -263,19 +253,24 @@ def handle_convert(args):
     return 0
 
 
-def create_argparser():
-    parser = ArgumentParser(exit_on_error=False, description="""
-    WBridge - enhanced WSL/Windows interop
-    """)
-
+def add_path_conversion_options(parser):
+    """
+    Adds --from-windows and --from-linux options to parser.
+    """
     conversion_group = parser.add_mutually_exclusive_group()
     conversion_group.add_argument("-l", "--from-linux",
                                   action="store_true",
-                                  help="Convert linux paths to windows paths"
+                                  help="Convert linux paths to windows paths. "
                                   "This is done by default")
     conversion_group.add_argument("-w", "--from-windows",
                                   action="store_true",
                                   help="Convert windows paths to linux paths")
+
+
+def create_argparser():
+    parser = ArgumentParser(exit_on_error=False, description="""
+    WBridge - enhanced WSL/Windows interop
+    """)
 
     subparsers = parser.add_subparsers(required=True)
 
@@ -291,6 +286,8 @@ def create_argparser():
     run_parser.add_argument("command",
                             nargs=REMAINDER,
                             help='Command to be executed, with translated paths')
+
+    add_path_conversion_options(run_parser)
     run_parser.set_defaults(handler=handle_run)
 
     open_parser = subparsers.add_parser("open", description="""
@@ -326,6 +323,7 @@ def create_argparser():
     convert_parser.add_argument("paths",
                                 nargs='+',
                                 help='Paths to be converted.')
+    add_path_conversion_options(convert_parser)
     convert_parser.set_defaults(handler=handle_convert)
 
     return parser
