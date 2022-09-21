@@ -264,17 +264,16 @@ def add_path_conversion_options(parser):
     """
     conversion_group = parser.add_mutually_exclusive_group()
     conversion_group.add_argument(
-        "-l",
-        "--from-linux",
+        "-l", "--from-linux",
         action="store_true",
-        help="Convert linux paths to windows paths. " "This is done by default",
-    )
+        help="Convert linux paths to windows paths. This is done by default",
+    )  # fmt: skip
+
     conversion_group.add_argument(
-        "-w",
-        "--from-windows",
+        "-w", "--from-windows",
         action="store_true",
         help="Convert windows paths to linux paths",
-    )
+    )  # fmt: skip
 
 
 def create_argparser():
@@ -295,11 +294,10 @@ def create_argparser():
     )
 
     run_parser.add_argument(
-        "-s",
-        "--save",
+        "-s", "--save",
         action="store_true",
         help="Instead of running, save the command as a shell script in ~/bin",
-    )
+    )  # fmt: skip
 
     run_parser.add_argument(
         "command",
@@ -334,11 +332,10 @@ def create_argparser():
     )
 
     screenshot_parser.add_argument(
-        "-r",
-        "--raw",
+        "-r", "--raw",
         action="store_true",
         help="Interpret file argument literally, without strftime",
-    )
+    )  # fmt: skip
 
     screenshot_parser.set_defaults(handler=handle_screenshot)
 
@@ -348,11 +345,10 @@ def create_argparser():
     )
 
     convert_parser.add_argument(
-        "-0",
-        "--null",
+        "-0", "--null",
         action="store_true",
         help="Separate paths with the null character instead of newline",
-    )
+    )  # fmt: skip
 
     convert_parser.add_argument(
         "paths",
