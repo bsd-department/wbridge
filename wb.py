@@ -49,19 +49,20 @@ def linux_to_windows(path):
     if relative_to_subdir(path, "/mnt") and len(path.parts[2]) == 1:
         drive_letter = path.parts[2].upper()
         # When path leads to the drive root directory
-        return str(PureWindowsPath(drive_letter + ":\\")
-                   .joinpath(*path.parts[3:]))
+        return str(PureWindowsPath(drive_letter + ":\\").joinpath(*path.parts[3:]))
 
     # When the path points to another wsl distro
     # /mnt/wsl/instances/<distro name>/path
     if relative_to_subdir(path, "/mnt/wsl/instances"):
         distro_name = path.parts[4]
-        return str(PureWindowsPath("\\\\wsl$\\" + distro_name)
-                   .joinpath(*path.parts[5:]))
+        return str(
+            PureWindowsPath("\\\\wsl$\\" + distro_name).joinpath(*path.parts[5:])
+        )
 
     # When the path points to the current distro
-    return str(PureWindowsPath("\\\\wsl$\\" + environ['WSL_DISTRO_NAME'])
-               .joinpath(path))
+    return str(
+        PureWindowsPath("\\\\wsl$\\" + environ["WSL_DISTRO_NAME"]).joinpath(path)
+    )
 
 
 def windows_to_linux(path):
@@ -81,9 +82,10 @@ def windows_to_linux(path):
     path_prefix = None
     if (drive_path := re.search("^([a-zA-Z]):$", path.drive)) is not None:
         path_prefix = "/mnt/" + drive_path[1].lower()
-    elif (instance_path := re.search("^\\\\\\\\wsl\\$\\\\(.+)$",
-                                     path.drive)) is not None:
-        if instance_path[1] == environ['WSL_DISTRO_NAME']:
+    elif (
+        instance_path := re.search("^\\\\\\\\wsl\\$\\\\(.+)$", path.drive)
+    ) is not None:
+        if instance_path[1] == environ["WSL_DISTRO_NAME"]:
             path_prefix = "/"
         else:
             path_prefix = "/mnt/wsl/instances/" + instance_path[1]
@@ -105,7 +107,7 @@ def partition_command(args):
     if "--" in args:
         command_end_marker = args.index("--")
         command += args[0:command_end_marker]
-        args = args[command_end_marker + 1:]
+        args = args[command_end_marker + 1 :]
     return command, list(args)
 
 
@@ -117,9 +119,9 @@ def powershell_command_executor(command, args):
     cwd = powershell_quote(linux_to_windows(str(Path.cwd())))
     command[0] = f"Set-Location -LiteralPath {cwd}; " + command[0]
     args = list(map(powershell_quote, map(linux_to_windows, args)))
-    proc = subprocess.run(["powershell.exe",
-                           "-NoProfile",
-                           "-Command"] + command + args)
+
+    cmd = ["powershell.exe", "-NoProfile", "-Command"] + command + args
+    proc = subprocess.run(cmd)
     return proc.returncode
 
 
@@ -134,26 +136,27 @@ def save_command(command):
         command.append("--")
 
     wb_path = shlex.quote(str(Path(__file__).resolve()))
-    script = f'''\
+    script = f"""\
     #!/bin/sh
 
     exec {wb_path} run {shlex.join(command)} "$@"
-    '''
+    """
     script_path = Path.home().joinpath("bin", command[0])
     makedirs(script_path.parent, exist_ok=True)
 
-    with script_path.open('w') as f:
+    with script_path.open("w") as f:
         f.write(dedent(script))
 
     chmod(script_path, 0o755)
 
     print(f"Command successfully saved in '{script_path}'")
     if str(script_path.parent) not in environ["PATH"].split(":"):
-        print(dedent('''\
+        msg = """\
         WARNING: It appears ~/bin is not currently in $PATH
                  Consider adding this line somewhere to your .bashrc or .profile:
                  export PATH=~/bin:"$PATH"
-        '''), end='')
+        """
+        print(dedent(msg), end="")
 
 
 def handle_run(args):
@@ -174,9 +177,10 @@ def handle_run(args):
 
     if args.save:
         if args.from_windows:
-            print("ERROR: Saving the command and passing --from-windows "
-                  "isn't supported yet.",
-                  file=stderr)
+            msg = """\
+            ERROR: Saving the command and passing --from-windows isn't supported yet.
+            """
+            print(msg, file=stderr, end="")
             return 1
         save_command(command)
         return 0
@@ -191,7 +195,7 @@ def handle_open(args):
 
 
 def handle_screenshot(args):
-    script = '''\
+    script = """\
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
 
@@ -210,12 +214,11 @@ def handle_screenshot(args):
         $bmp.Dispose()
     }
     screenshot $($args[0])
-    '''
+    """
 
     if args.raw:
         if args.pattern is None:
-            print("ERROR: File name is required in raw mode.",
-                  file=stderr)
+            print("ERROR: File name is required in raw mode.", file=stderr)
             return 1
         output_name = args.pattern
     else:
@@ -225,27 +228,29 @@ def handle_screenshot(args):
 
     output_name = str(Path(output_name).resolve())
 
-    with NamedTemporaryFile('w', suffix='.ps1') as f:
+    with NamedTemporaryFile("w", suffix=".ps1") as f:
         f.write(dedent(script))
         f.flush()
 
-        cmd = list(map(linux_to_windows, [f.name, output_name]))
-        proc = subprocess.run(["powershell.exe",
-                               "-NoProfile",
-                               "-ExecutionPolicy", "Bypass",
-                               "-File"] + cmd)
+        # fmt: off
+        cmd = ["powershell.exe",
+               "-NoProfile",
+               "-ExecutionPolicy", "Bypass",
+               "-File"] + list(map(linux_to_windows, [f.name, output_name]))
+        # fmt: on
+        proc = subprocess.run(cmd)
         proc.check_returncode()
     return 0
 
 
 def handle_convert(args):
     path_mapper = linux_to_windows
-    line_ender = '\n'
+    line_ender = "\n"
     if args.from_windows:
         path_mapper = windows_to_linux
 
     if args.null:
-        line_ender = '\0'
+        line_ender = "\0"
 
     for p in map(path_mapper, args.paths):
         print(p, end=line_ender)
@@ -258,77 +263,109 @@ def add_path_conversion_options(parser):
     Adds --from-windows and --from-linux options to parser.
     """
     conversion_group = parser.add_mutually_exclusive_group()
-    conversion_group.add_argument("-l", "--from-linux",
-                                  action="store_true",
-                                  help="Convert linux paths to windows paths. "
-                                  "This is done by default")
-    conversion_group.add_argument("-w", "--from-windows",
-                                  action="store_true",
-                                  help="Convert windows paths to linux paths")
+    conversion_group.add_argument(
+        "-l",
+        "--from-linux",
+        action="store_true",
+        help="Convert linux paths to windows paths. " "This is done by default",
+    )
+    conversion_group.add_argument(
+        "-w",
+        "--from-windows",
+        action="store_true",
+        help="Convert windows paths to linux paths",
+    )
 
 
 def create_argparser():
-    parser = ArgumentParser(exit_on_error=False, description="""
-    WBridge - enhanced WSL/Windows interop
-    """)
+    parser = ArgumentParser(
+        description="WBridge - enhanced WSL/Windows interop",
+    )
 
     subparsers = parser.add_subparsers(required=True)
 
-    run_parser = subparsers.add_parser("run", description="""
-    Execute a command with command line arguments converted.
-    If '--' was passed as an argument, then only arguments after it are
-    converted. If you wish to pass '--' directly to the command, pass it twice.
-    """)
-    run_parser.add_argument('-s', '--save',
-                            action="store_true",
-                            help="Instead of running, save the command as "
-                            "a shell script in ~/bin")
-    run_parser.add_argument("command",
-                            nargs=REMAINDER,
-                            help='Command to be executed, with translated paths')
+    run_parser = subparsers.add_parser(
+        "run",
+        description="""
+        Execute a command with command line arguments converted.
+        If '--' was passed as an argument, then only arguments after it are
+        converted. If you wish to pass '--' directly to the command,
+        pass it twice.
+        """,
+    )
+
+    run_parser.add_argument(
+        "-s",
+        "--save",
+        action="store_true",
+        help="Instead of running, save the command as a shell script in ~/bin",
+    )
+
+    run_parser.add_argument(
+        "command",
+        nargs=REMAINDER,
+        help="Command to be executed, with translated paths",
+    )
 
     add_path_conversion_options(run_parser)
     run_parser.set_defaults(handler=handle_run)
 
-    open_parser = subparsers.add_parser("open", description="""
-    Open a file or URL with the default handler on Windows.
-    """)
-    open_parser.add_argument("file_or_url",
-                             help='The file or URL to be opened by Windows')
+    open_parser = subparsers.add_parser(
+        "open",
+        description="Open a file or URL with the default handler on Windows.",
+    )
+
+    open_parser.add_argument(
+        "file_or_url",
+        help="The file or URL to be opened by Windows",
+    )
+
     open_parser.set_defaults(handler=handle_open)
 
-    screenshot_parser = subparsers.add_parser("screenshot", description="""
-    Take a screenshot and save it in the current directory.
-    """)
+    screenshot_parser = subparsers.add_parser(
+        "screenshot",
+        description="Take a screenshot and save it in the current directory.",
+    )
 
-    screenshot_parser.add_argument('pattern',
-                                   nargs='?',
-                                   help='Output file name. Can contain '
-                                   'strftime format codes.')
+    screenshot_parser.add_argument(
+        "pattern",
+        nargs="?",
+        help="Output file name. Can contain strftime format codes.",
+    )
 
-    screenshot_parser.add_argument('-r', '--raw',
-                                   action='store_true',
-                                   help="Interpret file argument literally, "
-                                   "without strftime")
+    screenshot_parser.add_argument(
+        "-r",
+        "--raw",
+        action="store_true",
+        help="Interpret file argument literally, without strftime",
+    )
 
     screenshot_parser.set_defaults(handler=handle_screenshot)
 
-    convert_parser = subparsers.add_parser("convert", description="""
-    Convert one or more paths.
-    """)
-    convert_parser.add_argument("-0", "--null",
-                                action='store_true',
-                                help='Separate paths with the null character '
-                                'instead of newline')
-    convert_parser.add_argument("paths",
-                                nargs='+',
-                                help='Paths to be converted.')
+    convert_parser = subparsers.add_parser(
+        "convert",
+        description="Convert one or more paths.",
+    )
+
+    convert_parser.add_argument(
+        "-0",
+        "--null",
+        action="store_true",
+        help="Separate paths with the null character instead of newline",
+    )
+
+    convert_parser.add_argument(
+        "paths",
+        nargs="+",
+        help="Paths to be converted.",
+    )
+
     add_path_conversion_options(convert_parser)
     convert_parser.set_defaults(handler=handle_convert)
 
     return parser
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = create_argparser().parse_args()
     exit(args.handler(args))
