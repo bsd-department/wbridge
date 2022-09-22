@@ -11,6 +11,8 @@ from argparse import ArgumentParser, REMAINDER
 from textwrap import dedent
 from tempfile import NamedTemporaryFile
 from datetime import datetime
+from collections import namedtuple
+from functools import cache
 
 
 def is_url(s):
@@ -32,27 +34,38 @@ def decode_octal_escapes(s):
     return re.sub("\\\\([0-7]{3})", lambda m: chr(int(m[1], 8)), s)
 
 
+MountedDevice = namedtuple("MountedDevice", ["device", "mount", "fstype"])
+
+
+def parse_mounts():
+    """
+    Returns a list of MountedDevice objects, representing each device/mount pair.
+    """
+    with open("/proc/mounts") as f:
+        return [
+            MountedDevice._make(map(decode_octal_escapes, line.strip().split(" ")[:3]))
+            for line in f
+        ]
+
+
+@cache
 def find_wsl_mounts():
     """
     Returns a dict of drives/UNC shares mapped to lists of their WSL mount points
     """
-    with open("/proc/mounts") as f:
-        ret = {}
-        mounts = [
-            (spec, dir)
-            for spec, dir, fstype in [
-                map(decode_octal_escapes, line.strip().split(" ")[:3]) for line in f
-            ]
-            if fstype == "9p" and "\\" in spec
-        ]
+    ret = {}
+    for device, mount, fstype in parse_mounts():
+        # WSL mount detection could also be done based on mount options
+        # But this is currently enough
+        if fstype != "9p" or "\\" not in device:
+            continue
 
-        for spec, dir in mounts:
-            # Normalize drives
-            if spec.endswith("\\"):
-                spec = spec[:-1]
-            ret.setdefault(spec, []).append(dir)
+        if device.endswith("\\"):
+            # Store drives like PureWindowsPath.drive for easy lookup
+            device = device[:-1]
+        ret.setdefault(device, []).append(mount)
 
-        return ret
+    return ret
 
 
 def linux_to_windows(path):
