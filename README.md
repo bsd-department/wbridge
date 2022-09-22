@@ -9,6 +9,7 @@ with Windows from WSL.
 - Supports opening files and URLs using the default application set under Windows.
 - Supports path conversion of non-existing paths and file URLs, unlike built-in `wslpath`.
 - Supports paths to other WSL distros[^1]
+- Supports arbitrary mount points of windows drives and UNC shares
 
 [^1]: Only works after following [this guide](https://askubuntu.com/a/1395784).
 
