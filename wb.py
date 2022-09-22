@@ -47,6 +47,9 @@ def find_wsl_mounts():
         ]
 
         for spec, dir in mounts:
+            # Normalize drives
+            if spec.endswith("\\"):
+                spec = spec[:-1]
             ret.setdefault(spec, []).append(dir)
 
         return ret
@@ -71,12 +74,21 @@ def linux_to_windows(path):
     if is_rel and path.is_relative_to(Path.cwd()):
         return str(path.relative_to(Path.cwd())).replace("/", "\\")
 
+    for windows_root, mountpoints in find_wsl_mounts().items():
+        for mount in mountpoints:
+            if path.is_relative_to(mount):
+                return str(
+                    PureWindowsPath(windows_root + "\\").joinpath(
+                        path.relative_to(mount)
+                    )
+                )
+
     # If the path is located on a windows drive
     # /mnt/<drive letter>/rest/of/path
-    if relative_to_subdir(path, "/mnt") and len(path.parts[2]) == 1:
-        drive_letter = path.parts[2].upper()
-        # When path leads to the drive root directory
-        return str(PureWindowsPath(drive_letter + ":\\").joinpath(*path.parts[3:]))
+    # if relative_to_subdir(path, "/mnt") and len(path.parts[2]) == 1:
+    #     drive_letter = path.parts[2].upper()
+    #     # When path leads to the drive root directory
+    #     return str(PureWindowsPath(drive_letter + ":\\").joinpath(*path.parts[3:]))
 
     # When the path points to another wsl distro
     # /mnt/wsl/instances/<distro name>/path
@@ -107,8 +119,8 @@ def windows_to_linux(path):
         return path.as_posix()
 
     path_prefix = None
-    if (drive_path := re.search("^([a-zA-Z]):$", path.drive)) is not None:
-        path_prefix = "/mnt/" + drive_path[1].lower()
+    if (mounts := find_wsl_mounts().get(path.drive)) is not None:
+        path_prefix = mounts[0]
     elif (
         instance_path := re.search("^\\\\\\\\wsl\\$\\\\(.+)$", path.drive)
     ) is not None:
@@ -120,7 +132,7 @@ def windows_to_linux(path):
     if path_prefix is not None:
         return str(Path(path_prefix).joinpath(*path.parts[1:]))
 
-    # At this point, path is probably some non-WSL UNC path.
+    # At this point, path is probably some unmounted UNC path.
     # Since there's no clear way of converting those to WSL paths,
     # just return them instead.
     return str(path)
