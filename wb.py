@@ -60,10 +60,8 @@ def find_wsl_mounts():
         if fstype != "9p" or "\\" not in device:
             continue
 
-        if device.endswith("\\"):
-            # Store drives like PureWindowsPath.drive for easy lookup
-            device = device[:-1]
-        ret.setdefault(device, []).append(mount)
+        # Store drives like PureWindowsPath.drive for easy lookup
+        ret.setdefault(device.rstrip("\\"), []).append(mount)
 
     return ret
 
