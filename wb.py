@@ -25,6 +25,33 @@ def relative_to_subdir(path, directory):
     return path.is_relative_to(directory) and len(path.parts) > subdir_index
 
 
+def decode_octal_escapes(s):
+    """
+    Replaces all octal escapes with their corresponding character
+    """
+    return re.sub("\\\\([0-7]{3})", lambda m: chr(int(m[1], 8)), s)
+
+
+def find_wsl_mounts():
+    """
+    Returns a dict of drives/UNC shares mapped to lists of their WSL mount points
+    """
+    with open("/proc/mounts") as f:
+        ret = {}
+        mounts = [
+            (spec, dir)
+            for spec, dir, fstype in [
+                map(decode_octal_escapes, line.strip().split(" ")[:3]) for line in f
+            ]
+            if fstype == "9p" and "\\" in spec
+        ]
+
+        for spec, dir in mounts:
+            ret.setdefault(spec, []).append(dir)
+
+        return ret
+
+
 def linux_to_windows(path):
     path = path.strip()
 
