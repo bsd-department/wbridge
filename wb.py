@@ -87,6 +87,7 @@ def linux_to_windows(path):
     if is_rel and path.is_relative_to(Path.cwd()):
         return str(path.relative_to(Path.cwd())).replace("/", "\\")
 
+    # If the path is located on a windows drive or a mounted UNC share
     for windows_root, mountpoints in find_wsl_mounts().items():
         for mount in mountpoints:
             if path.is_relative_to(mount):
@@ -95,13 +96,6 @@ def linux_to_windows(path):
                         path.relative_to(mount)
                     )
                 )
-
-    # If the path is located on a windows drive
-    # /mnt/<drive letter>/rest/of/path
-    # if relative_to_subdir(path, "/mnt") and len(path.parts[2]) == 1:
-    #     drive_letter = path.parts[2].upper()
-    #     # When path leads to the drive root directory
-    #     return str(PureWindowsPath(drive_letter + ":\\").joinpath(*path.parts[3:]))
 
     # When the path points to another wsl distro
     # /mnt/wsl/instances/<distro name>/path
