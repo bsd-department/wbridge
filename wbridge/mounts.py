@@ -30,6 +30,6 @@ def find_wsl_mounts():
             continue
 
         # Store drives like PureWindowsPath.drive for easy lookup
-        ret.setdefault(device.rstrip, []).append(mount)
+        ret.setdefault(device.rstrip("\\"), []).append(mount)
 
     return ret
