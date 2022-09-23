@@ -15,11 +15,10 @@ def save_command(command):
     if "--" not in command:
         command.append("--")
 
-    wb_path = shlex.quote(str(Path(__file__).resolve()))
     script = f"""\
     #!/bin/sh
 
-    exec {wb_path} run {shlex.join(command)} "$@"
+    exec wb run {shlex.join(command)} "$@"
     """
     script_path = Path.home().joinpath("bin", command[0])
     makedirs(script_path.parent, exist_ok=True)
