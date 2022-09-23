@@ -11,8 +11,7 @@ def path_conversion_ensure_equivalent(linux_path, windows_path, *, absolute=True
     windows_path_forward_slash = windows_path.replace("\\", "/")
 
     assert l2w(linux_path) == windows_path
-    assert w2l(windows_path) == linux_path
-    assert w2l(windows_path_forward_slash) == linux_path
+    assert w2l(windows_path) == w2l(windows_path_forward_slash) == linux_path
 
     # file URLs are always absolute
     if absolute:
