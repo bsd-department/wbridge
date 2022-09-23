@@ -22,7 +22,7 @@ with Windows from WSL.
 Run windows programs, with command line paths translated:
 
 ``` sh
-wb.py run mpv /mnt/d/file.mp4
+wb run mpv /mnt/d/file.mp4
 # Equivalent to:
 powershell.exe -NoProfile -Command mpv 'D:\file.mp4'
 ```
@@ -30,23 +30,23 @@ powershell.exe -NoProfile -Command mpv 'D:\file.mp4'
 Save a command as a shell script in ~/bin to run it directly
 
 ``` sh
-wb.py run --save mpv
+wb run --save mpv
 mpv some/file.mp4
 # Equivalent to
-wb.py run mpv -- some/file.mp4
+wb run mpv -- some/file.mp4
 ```
 
 Open a file or URL using the default Windows application:
 
 ``` sh
-wb.py open image.jpg
-wb.py open https://example.com
+wb open image.jpg
+wb open https://example.com
 ```
 
 Convert linux paths to windows paths:
 
 ``` sh
-wb.py convert /etc/passwd /mnt/c/Users/User/Desktop/file.txt /mnt/wsl/instances/distro/etc/hosts
+wb convert /etc/passwd /mnt/c/Users/User/Desktop/file.txt /mnt/wsl/instances/distro/etc/hosts
 # Output:
 # \\wsl$\<current distro name>\etc\passwd
 # C:\Users\User\Desktop\file.txt
@@ -56,7 +56,7 @@ wb.py convert /etc/passwd /mnt/c/Users/User/Desktop/file.txt /mnt/wsl/instances/
 Convert windows paths to linux paths:
 
 ``` sh
-wb.py convert -w C:\Windows \\wsl$\<current-distro>\etc\sudoers D:/some/path
+wb convert -w C:\Windows \\wsl$\<current-distro>\etc\sudoers D:/some/path
 # Output:
 # /mnt/c/Windows
 # /etc/sudoers
