@@ -1,178 +1,15 @@
-#!/usr/bin/env python3
-
-import re
-import subprocess
 import shlex
-from pathlib import PosixPath as Path, PureWindowsPath
-from urllib.parse import urlparse
-from os import environ, chmod, makedirs
+import subprocess
+from pathlib import PosixPath as Path
+from os import makedirs, chmod, environ
 from sys import stderr
-from argparse import ArgumentParser, REMAINDER
 from textwrap import dedent
-from tempfile import NamedTemporaryFile
 from datetime import datetime
-from collections import namedtuple
-from functools import cache
-
-
-def is_url(s):
-    return re.search("^[a-zA-Z]+://", s) is not None
-
-
-def relative_to_subdir(path, directory):
-    """
-    Returns true if path is relative to some subdir of directory
-    """
-    subdir_index = len(Path(directory).parts)
-    return path.is_relative_to(directory) and len(path.parts) > subdir_index
-
-
-def decode_octal_escapes(s):
-    """
-    Replaces all octal escapes with their corresponding character
-    """
-    return re.sub("\\\\([0-7]{3})", lambda m: chr(int(m[1], 8)), s)
-
-
-MountedDevice = namedtuple("MountedDevice", ["device", "mount", "fstype"])
-
-
-def parse_mounts():
-    """
-    Returns a list of MountedDevice objects, representing each device/mount pair.
-    """
-    with open("/proc/mounts") as f:
-        return [
-            MountedDevice._make(map(decode_octal_escapes, line.strip().split(" ")[:3]))
-            for line in f
-        ]
-
-
-@cache
-def find_wsl_mounts():
-    """
-    Returns a dict of drives/UNC shares mapped to lists of their WSL mount points
-    """
-    ret = {}
-    for device, mount, fstype in parse_mounts():
-        # WSL mount detection could also be done based on mount options
-        # But this is currently enough
-        if fstype != "9p" or "\\" not in device:
-            continue
-
-        # Store drives like PureWindowsPath.drive for easy lookup
-        ret.setdefault(device.rstrip("\\"), []).append(mount)
-
-    return ret
-
-
-def linux_to_windows(path):
-    path = path.strip()
-
-    # As a special case, never touch non-file URLs
-    if is_url(path):
-        scheme, _, urlpath, *_ = urlparse(path)
-        if scheme != "file":
-            return path
-        # PureWindowsPath.as_uri() doesn't work for UNC paths.
-        return "file:///" + linux_to_windows(urlpath).replace("\\", "/")
-
-    path = Path(path)
-    is_rel = not path.is_absolute()
-
-    path = path.resolve()
-
-    if is_rel and path.is_relative_to(Path.cwd()):
-        return str(path.relative_to(Path.cwd())).replace("/", "\\")
-
-    # If the path is located on a windows drive or a mounted UNC share
-    for windows_root, mountpoints in find_wsl_mounts().items():
-        for mount in mountpoints:
-            if path.is_relative_to(mount):
-                return str(
-                    PureWindowsPath(windows_root + "\\").joinpath(
-                        path.relative_to(mount)
-                    )
-                )
-
-    # When the path points to another wsl distro
-    # /mnt/wsl/instances/<distro name>/path
-    if relative_to_subdir(path, "/mnt/wsl/instances"):
-        distro_name = path.parts[4]
-        return str(
-            PureWindowsPath("\\\\wsl$\\" + distro_name).joinpath(*path.parts[5:])
-        )
-
-    # When the path points to the current distro
-    return str(
-        PureWindowsPath("\\\\wsl$\\" + environ["WSL_DISTRO_NAME"]).joinpath(path)
-    )
-
-
-def windows_to_linux(path):
-    path = path.strip()
-
-    if is_url(path):
-        scheme, _, urlpath, *_ = urlparse(path)
-        if scheme != "file":
-            return path
-        # Skip the leading slash in URL path
-        return Path(windows_to_linux(urlpath[1:])).as_uri()
-
-    path = PureWindowsPath(path)
-    if not path.is_absolute():
-        return path.as_posix()
-
-    path_prefix = None
-    if (mounts := find_wsl_mounts().get(path.drive)) is not None:
-        path_prefix = mounts[0]
-    elif (
-        instance_path := re.search("^\\\\\\\\wsl\\$\\\\(.+)$", path.drive)
-    ) is not None:
-        if instance_path[1] == environ["WSL_DISTRO_NAME"]:
-            path_prefix = "/"
-        else:
-            path_prefix = "/mnt/wsl/instances/" + instance_path[1]
-
-    if path_prefix is not None:
-        return str(Path(path_prefix).joinpath(*path.parts[1:]))
-
-    # At this point, path is probably some unmounted UNC path.
-    # Since there's no clear way of converting those to WSL paths,
-    # just return them instead.
-    return str(path)
-
-
-def partition_command(args):
-    """
-    Splits the command line into the command and argument parts.
-    """
-    command, args = [args[0]], args[1:]
-    if "--" in args:
-        command_end_marker = args.index("--")
-        command += args[0:command_end_marker]
-        args = args[command_end_marker + 1 :]
-    return command, list(args)
-
-
-def powershell_quote(argument):
-    return "'{}'".format(argument.replace("'", "''"))
-
-
-def powershell_command_executor(command, args):
-    cwd = powershell_quote(linux_to_windows(str(Path.cwd())))
-    command[0] = f"Set-Location -LiteralPath {cwd}; " + command[0]
-    args = list(map(powershell_quote, map(linux_to_windows, args)))
-
-    cmd = ["powershell.exe", "-NoProfile", "-Command"] + command + args
-    proc = subprocess.run(cmd)
-    return proc.returncode
-
-
-def linux_command_executor(command, args):
-    """Executes a linux command directly."""
-    proc = subprocess.run(command + list(map(windows_to_linux, args)))
-    return proc.returncode
+from tempfile import NamedTemporaryFile
+from argparse import ArgumentParser, REMAINDER
+from .command import powershell_command_executor, linux_command_executor
+from .pathconvert import linux_to_windows, windows_to_linux
+from .misc import partition_command
 
 
 def save_command(command):
@@ -404,8 +241,3 @@ def create_argparser():
     convert_parser.set_defaults(handler=handle_convert)
 
     return parser
-
-
-if __name__ == "__main__":
-    args = create_argparser().parse_args()
-    exit(args.handler(args))
