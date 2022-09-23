@@ -1,15 +1,14 @@
 import shlex
-import subprocess
 from pathlib import PosixPath as Path
 from os import makedirs, chmod, environ
 from sys import stderr
 from textwrap import dedent
 from datetime import datetime
-from tempfile import NamedTemporaryFile
 from argparse import ArgumentParser, REMAINDER
 from .command import powershell_command_executor, linux_command_executor
 from .pathconvert import linux_to_windows, windows_to_linux
 from .misc import partition_command
+from .screenshot import save_screenshot
 
 
 def save_command(command):
@@ -76,27 +75,6 @@ def handle_open(args):
 
 
 def handle_screenshot(args):
-    script = """\
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -AssemblyName System.Drawing
-
-    function screenshot($path) {
-        $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-        $bmp = New-Object Drawing.Bitmap $bounds.Width, $bounds.Height
-        $graphics = [Drawing.Graphics]::FromImage($bmp)
-
-        $null = $graphics.CopyFromScreen($bounds.Location,
-                                         [Drawing.Point]::Empty,
-                                         $bounds.Size)
-
-        $bmp.Save($path)
-
-        $graphics.Dispose()
-        $bmp.Dispose()
-    }
-    screenshot $($args[0])
-    """
-
     if args.raw:
         if args.pattern is None:
             print("ERROR: File name is required in raw mode.", file=stderr)
@@ -107,20 +85,9 @@ def handle_screenshot(args):
 
         output_name = datetime.now().strftime(pattern)
 
-    output_name = str(Path(output_name).resolve())
+    output_file = str(Path(output_name).resolve())
 
-    with NamedTemporaryFile("w", suffix=".ps1") as f:
-        f.write(dedent(script))
-        f.flush()
-
-        # fmt: off
-        cmd = ["powershell.exe",
-               "-NoProfile",
-               "-ExecutionPolicy", "Bypass",
-               "-File"] + list(map(linux_to_windows, [f.name, output_name]))
-        # fmt: on
-        proc = subprocess.run(cmd)
-        proc.check_returncode()
+    save_screenshot(output_file)
     return 0
 
 
