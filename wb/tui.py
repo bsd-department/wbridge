@@ -60,7 +60,7 @@ def handle_run(args):
             msg = """\
             ERROR: Saving the command and passing --from-windows isn't supported yet.
             """
-            print(msg, file=stderr, end="")
+            print(dedent(msg), file=stderr, end="")
             return 1
         save_command(command)
         return 0
