@@ -1,4 +1,4 @@
-from wb.pathconvert import linux_to_windows as l2w, windows_to_linux as w2l
+from wbridge.pathconvert import linux_to_windows as l2w, windows_to_linux as w2l
 from os import environ
 
 
