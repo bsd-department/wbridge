@@ -13,6 +13,16 @@ with Windows from WSL.
 
 [^1]: Only works after following [this guide](https://askubuntu.com/a/1395784).
 
+## Installation
+
+From source:
+
+``` sh
+git clone https://github.com/bsd-department/wbridge.git
+cd wbridge
+pip install .
+```
+
 ## Requirements
 - Python 3.8+
 - WSL2
