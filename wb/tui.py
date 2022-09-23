@@ -1,41 +1,17 @@
-import shlex
 from pathlib import PosixPath as Path
-from os import makedirs, chmod, environ
+from os import environ
 from sys import stderr
 from textwrap import dedent
 from datetime import datetime
 from argparse import ArgumentParser, REMAINDER
-from .command import powershell_command_executor, linux_command_executor
+from .command import (
+    powershell_command_executor,
+    linux_command_executor,
+    create_command_wrapper,
+)
 from .pathconvert import linux_to_windows, windows_to_linux
 from .misc import partition_command
 from .screenshot import save_screenshot
-
-
-def save_command(command):
-    if "--" not in command:
-        command.append("--")
-
-    script = f"""\
-    #!/bin/sh
-
-    exec wb run {shlex.join(command)} "$@"
-    """
-    script_path = Path.home().joinpath("bin", command[0])
-    makedirs(script_path.parent, exist_ok=True)
-
-    with script_path.open("w") as f:
-        f.write(dedent(script))
-
-    chmod(script_path, 0o755)
-
-    print(f"Command successfully saved in '{script_path}'")
-    if str(script_path.parent) not in environ["PATH"].split(":"):
-        msg = """\
-        WARNING: It appears ~/bin is not currently in $PATH
-                 Consider adding this line somewhere to your .bashrc or .profile:
-                 export PATH=~/bin:"$PATH"
-        """
-        print(dedent(msg), end="")
 
 
 def handle_run(args):
@@ -61,7 +37,18 @@ def handle_run(args):
             """
             print(dedent(msg), file=stderr, end="")
             return 1
-        save_command(command)
+
+        script_path = create_command_wrapper(command)
+        print(f"Command successfully saved in '{script_path}'")
+
+        if str(script_path.parent) not in environ["PATH"].split(":"):
+            msg = """\
+            WARNING: It appears ~/bin is not currently in $PATH
+                     Consider adding this line somewhere to your .bashrc or .profile:
+                     export PATH=~/bin:"$PATH"
+            """
+            print(dedent(msg), end="")
+
         return 0
 
     return command_executor(*partition_command(command))
