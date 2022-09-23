@@ -1,5 +1,7 @@
 from wbridge.pathconvert import linux_to_windows as l2w, windows_to_linux as w2l
+from wbridge.mounts import find_wsl_mounts
 from os import environ
+from unittest.mock import patch
 
 
 def path_conversion_ensure_equivalent(linux_path, windows_path, *, absolute=True):
@@ -40,3 +42,10 @@ def test_current_distro_path_conversion():
 def test_relative_path_conversion():
     path_conversion_ensure_equivalent("a/b/c/d", "a\\b\\c\\d", absolute=False)
     path_conversion_ensure_equivalent("--help", "--help", absolute=False)
+
+
+@patch.dict(find_wsl_mounts(), {"C:": ["/mnt/c", "/completely/arbitrary"]}, clear=True)
+def test_arbitrary_mount_path_conversion():
+    assert (
+        l2w("/mnt/c/Windows") == l2w("/completely/arbitrary/Windows") == "C:\\Windows"
+    )
