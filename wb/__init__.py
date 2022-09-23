@@ -1,6 +1,6 @@
-from .tui import create_argparser
+from .tui import create_argument_parser
 
 
 def main():
-    args = create_argparser().parse_args()
+    args = create_argument_parser().parse_args()
     return args.handler(args)
