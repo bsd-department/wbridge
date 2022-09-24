@@ -23,9 +23,9 @@ def linux_command_executor(command, args):
     return proc.returncode
 
 
-def create_command_wrapper(command):
+def create_command_wrapper(command, binpath):
     """
-    Creates a shell script wrapper around command. Returns the path to it.
+    Creates a shell script wrapper around command in binpath. Returns the path to it.
     """
     if "--" not in command:
         command.append("--")
@@ -35,8 +35,8 @@ def create_command_wrapper(command):
 
     exec wb run {shlex.join(command)} "$@"
     """
-    script_path = Path.home().joinpath(".local", "bin", command[0])
-    makedirs(script_path.parent, exist_ok=True)
+    script_path = binpath.joinpath(command[0])
+    makedirs(binpath, exist_ok=True)
 
     with script_path.open("x") as f:
         f.write(dedent(script))

@@ -44,3 +44,13 @@ def partition_command(args):
         command += args[0:command_end_marker]
         args = args[command_end_marker + 1 :]
     return command, list(args)
+
+
+def skip_leading_dashes(command):
+    """
+    Returns command, but with leading -- skipped.
+    It is necessary because argparse.REMAINDER doesn't do this automatically.
+    """
+    if len(command) >= 1 and command[0] == "--":
+        return command[1:]
+    return command

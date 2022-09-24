@@ -3,6 +3,7 @@ from .convert import implement_convert
 from .open import implement_open
 from .run import implement_run
 from .screenshot import implement_screenshot
+from .save import implement_save
 
 
 def create_argument_parser():
@@ -14,6 +15,7 @@ def create_argument_parser():
 
     # fmt: off
     for impl in [implement_run,
+                 implement_save,
                  implement_open,
                  implement_screenshot,
                  implement_convert]:
