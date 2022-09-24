@@ -14,6 +14,15 @@ def relative_to_subdir(path, directory):
     return path.is_relative_to(directory) and len(path.parts) > subdir_index
 
 
+def unexpand_user(path):
+    """
+    Returns path, with home directory replaced with ~
+    """
+    if path.is_relative_to(Path.home()):
+        return Path("~").joinpath(path.relative_to(Path.home()))
+    return path
+
+
 def decode_octal_escapes(s):
     """
     Replaces all octal escapes with their corresponding character

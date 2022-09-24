@@ -3,8 +3,12 @@ from sys import stderr
 from textwrap import dedent
 from argparse import REMAINDER
 from .misc import add_path_conversion_options
-from ..misc import partition_command
-from ..command import powershell_command_executor, linux_command_executor, create_command_wrapper
+from ..misc import partition_command, unexpand_user
+from ..command import (
+    powershell_command_executor,
+    linux_command_executor,
+    create_command_wrapper,
+)
 
 
 def handle_run(args):
@@ -31,14 +35,20 @@ def handle_run(args):
             print(dedent(msg), file=stderr, end="")
             return 1
 
-        script_path = create_command_wrapper(command)
+        try:
+            script_path = create_command_wrapper(command)
+        except FileExistsError as e:
+            print(f"ERROR: File '{e.filename}' already exists.")
+            return 1
+
         print(f"Command successfully saved in '{script_path}'")
 
         if str(script_path.parent) not in environ["PATH"].split(":"):
-            msg = """\
-            WARNING: It appears ~/bin is not currently in $PATH
+            unexpanded = unexpand_user(script_path.parent)
+            msg = f"""\
+            WARNING: It appears {unexpanded} is not currently in $PATH
                      Consider adding this line somewhere to your .bashrc or .profile:
-                     export PATH=~/bin:"$PATH"
+                     export PATH="{unexpanded}${{PATH:+":$PATH"}}"
             """
             print(dedent(msg), end="")
 

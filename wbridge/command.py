@@ -35,10 +35,10 @@ def create_command_wrapper(command):
 
     exec wb run {shlex.join(command)} "$@"
     """
-    script_path = Path.home().joinpath("bin", command[0])
+    script_path = Path.home().joinpath(".local", "bin", command[0])
     makedirs(script_path.parent, exist_ok=True)
 
-    with script_path.open("w") as f:
+    with script_path.open("x") as f:
         f.write(dedent(script))
 
     chmod(script_path, 0o755)
