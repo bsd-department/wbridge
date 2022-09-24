@@ -37,10 +37,10 @@ wb run mpv /mnt/d/file.mp4
 powershell.exe -NoProfile -Command mpv 'D:\file.mp4'
 ```
 
-Save a command as a shell script in ~/bin to run it directly
+Save a command as a shell script in ~/.local/bin to run it directly
 
 ``` sh
-wb save mpv
+wb alias mpv
 mpv some/file.mp4
 # Equivalent to
 wb run mpv -- some/file.mp4

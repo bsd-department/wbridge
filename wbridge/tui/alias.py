@@ -7,7 +7,7 @@ from ..command import create_command_wrapper
 from ..misc import skip_leading_dashes, unexpand_user
 
 
-def handle_save(args):
+def handle_alias(args):
     command = skip_leading_dashes(args.command)
     if len(command) == 0:
         print("ERROR: Command cannot be empty.", file=stderr)
@@ -33,26 +33,26 @@ def handle_save(args):
     return 0
 
 
-def implement_save(parser):
+def implement_alias(parser):
     """
-    Add save subcommand to argument parser
+    Add alias subcommand to argument parser
     """
-    save_parser = parser.add_parser(
-        "save",
+    alias_parser = parser.add_parser(
+        "alias",
         description="""
         Create a shell script that runs specified command through WBridge
         """,
     )
 
-    save_parser.add_argument(
+    alias_parser.add_argument(
         "-b", "--binpath",
-        help="Directory where the script will be saved. By default: ~/.local/bin",
+        help="Directory where the script will be saved. Default: ~/.local/bin",
         default=Path.home().joinpath(".local", "bin"),
         type=Path
     )  # fmt: skip
 
-    save_parser.add_argument(
+    alias_parser.add_argument(
         "command", nargs=REMAINDER, help="Command to be saved in the shell script."
     )
 
-    save_parser.set_defaults(handler=handle_save)
+    alias_parser.set_defaults(handler=handle_alias)
