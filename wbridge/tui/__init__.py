@@ -23,3 +23,8 @@ def create_argument_parser():
     # fmt: on
 
     return parser
+
+
+def main():
+    args = create_argument_parser().parse_args()
+    return args.handler(args)

@@ -16,4 +16,4 @@ tests = [
 ]
 
 [project.scripts]
-wb = "wbridge:main"
+wb = "wbridge.tui:main"
