@@ -40,7 +40,7 @@ def implement_save(parser):
     save_parser = parser.add_parser(
         "save",
         description="""
-        Save a command as a shell script to be executed with WBridge
+        Create a shell script that runs specified command through WBridge
         """,
     )
 
