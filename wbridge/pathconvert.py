@@ -66,9 +66,7 @@ def windows_to_linux(path):
     path_prefix = None
     if (mounts := find_wsl_mounts().get(path.drive)) is not None:
         path_prefix = mounts[0]
-    elif (
-        instance_path := re.search("^\\\\\\\\wsl\\$\\\\(.+)$", path.drive)
-    ) is not None:
+    elif (instance_path := re.search(r"^\\\\wsl\$\\(.+)$", path.drive)) is not None:
         if instance_path[1] == environ["WSL_DISTRO_NAME"]:
             path_prefix = "/"
         else:

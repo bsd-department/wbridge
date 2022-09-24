@@ -18,7 +18,7 @@ def decode_octal_escapes(s):
     """
     Replaces all octal escapes with their corresponding character
     """
-    return re.sub("\\\\([0-7]{3})", lambda m: chr(int(m[1], 8)), s)
+    return re.sub(r"\\([0-7]{3})", lambda m: chr(int(m[1], 8)), s)
 
 
 def powershell_quote(s):
