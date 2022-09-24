@@ -14,7 +14,7 @@ def handle_save(args):
         return 1
 
     try:
-        script_path = create_command_wrapper(command, args.binpath)
+        script_path = create_command_wrapper(command, args.binpath.expanduser())
     except FileExistsError as e:
         print(f"ERROR: File '{e.filename}' already exists.", file=stderr)
         return 1
