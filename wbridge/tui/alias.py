@@ -14,7 +14,10 @@ def handle_alias(args):
         return 1
 
     try:
-        script_path = create_command_wrapper(command, args.binpath.expanduser())
+        script_path = create_command_wrapper(
+            command,
+            binary_path=args.binpath.expanduser(),
+        )
     except FileExistsError as e:
         print(f"ERROR: File '{e.filename}' already exists.", file=stderr)
         return 1
