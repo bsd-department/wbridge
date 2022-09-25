@@ -17,6 +17,7 @@ def handle_alias(args):
         script_path = create_command_wrapper(
             command,
             binary_path=args.binpath.expanduser(),
+            wrapper_name=args.with_name,
         )
     except FileExistsError as e:
         print(f"ERROR: File '{e.filename}' already exists.", file=stderr)
@@ -53,6 +54,14 @@ def implement_alias(parser):
         default=Path.home().joinpath(".local", "bin"),
         type=Path
     )  # fmt: skip
+
+    alias_parser.add_argument(
+        "--with-name",
+        help="""\
+        Specify the file name for the script. If not specified, command name will be
+        used as the script name.
+        """,
+    )
 
     alias_parser.add_argument(
         "command", nargs=REMAINDER, help="Command to be saved in the shell script."
