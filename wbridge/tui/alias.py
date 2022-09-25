@@ -43,7 +43,7 @@ def implement_alias(parser):
     """
     alias_parser = parser.add_parser(
         "alias",
-        description="""
+        description="""\
         Create a shell script that runs specified command through WBridge
         """,
     )

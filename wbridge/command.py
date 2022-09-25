@@ -23,9 +23,12 @@ def linux_command_executor(command, args):
     return proc.returncode
 
 
-def create_command_wrapper(command, *, binary_path, wrapper_name=None):
+def create_command_wrapper(command, *,
+                           binary_path=Path.home().joinpath(".local", "bin"),
+                           wrapper_name=None):  # fmt: skip
     """
     Creates a shell script wrapper around command in binpath. Returns the path to it.
+    If wrapper_name is unspecified, use the first element of command as the file name.
     """
     if "--" not in command:
         command.append("--")
