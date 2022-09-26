@@ -26,7 +26,7 @@ def handle_alias(args):
         msg = f"""\
         WARNING: It appears {unexpanded} is not currently in $PATH
                  Consider adding this line somewhere to your .bashrc or .profile:
-                 export PATH="{unexpanded}${{PATH:+":$PATH"}}"
+                 export PATH={unexpanded}"${{PATH:+":$PATH"}}"
         """
         print(dedent(msg), end="", file=stderr)
 
