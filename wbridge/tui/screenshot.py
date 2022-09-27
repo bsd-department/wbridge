@@ -1,10 +1,11 @@
+from argparse import _SubParsersAction as SubParsers, ArgumentParser
 from sys import stderr
 from datetime import datetime
 from pathlib import PosixPath as Path
 from ..screenshot import save_screenshot
 
 
-def handle_screenshot(args):
+def handle_screenshot(args) -> int:
     if args.raw:
         if args.pattern is None:
             print("ERROR: File name is required in raw mode.", file=stderr)
@@ -21,11 +22,11 @@ def handle_screenshot(args):
     return 0
 
 
-def implement_screenshot(parser):
+def implement_screenshot(subparsers: SubParsers[ArgumentParser]):
     """
     Adds screenshot subcommand to argument parser
     """
-    screenshot_parser = parser.add_parser(
+    screenshot_parser = subparsers.add_parser(
         "screenshot",
         description="Take a screenshot and save it in the current directory.",
     )

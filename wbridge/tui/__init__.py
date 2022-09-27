@@ -6,7 +6,7 @@ from .screenshot import implement_screenshot
 from .alias import implement_alias
 
 
-def create_argument_parser():
+def create_argument_parser() -> ArgumentParser:
     parser = ArgumentParser(
         description="WBridge - enhanced WSL/Windows interop",
     )
@@ -25,6 +25,6 @@ def create_argument_parser():
     return parser
 
 
-def main():
+def main() -> int:
     args = create_argument_parser().parse_args()
     return args.handler(args)

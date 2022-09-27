@@ -6,7 +6,7 @@ from .misc import decode_octal_escapes
 MountedDevice = namedtuple("MountedDevice", ["device", "mount", "fstype"])
 
 
-def parse_mounts():
+def parse_mounts() -> list[MountedDevice]:
     """
     Returns a list of MountedDevice objects, representing each device/mount pair.
     """
@@ -18,11 +18,11 @@ def parse_mounts():
 
 
 @cache
-def find_wsl_mounts():
+def find_wsl_mounts() -> dict[str, list[str]]:
     """
     Returns a dict of drives/UNC shares mapped to lists of their WSL mount points
     """
-    ret = {}
+    ret: dict[str, list[str]] = {}
     for device, mount, fstype in parse_mounts():
         # WSL mount detection could also be done based on mount options
         # But this is currently enough

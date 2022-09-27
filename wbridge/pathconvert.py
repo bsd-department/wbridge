@@ -6,18 +6,18 @@ from .misc import is_url, relative_to_subdir
 from .mounts import find_wsl_mounts
 
 
-def linux_to_windows(path):
-    path = path.strip()
+def linux_to_windows(input: str) -> str:
+    input = input.strip()
 
     # As a special case, never touch non-file URLs
-    if is_url(path):
-        scheme, _, urlpath, *_ = urlparse(path)
+    if is_url(input):
+        scheme, _, urlpath, *_ = urlparse(input)
         if scheme != "file":
-            return path
+            return input
         # PureWindowsPath.as_uri() doesn't work for UNC paths.
         return "file:///" + linux_to_windows(urlpath).replace("\\", "/")
 
-    path = Path(path)
+    path = Path(input)
     is_rel = not path.is_absolute()
 
     path = path.resolve()
@@ -49,17 +49,17 @@ def linux_to_windows(path):
     )
 
 
-def windows_to_linux(path):
-    path = path.strip()
+def windows_to_linux(input: str) -> str:
+    input = input.strip()
 
-    if is_url(path):
-        scheme, _, urlpath, *_ = urlparse(path)
+    if is_url(input):
+        scheme, _, urlpath, *_ = urlparse(input)
         if scheme != "file":
-            return path
+            return input
         # Skip the leading slash in URL path
         return Path(windows_to_linux(urlpath[1:])).as_uri()
 
-    path = PureWindowsPath(path)
+    path = PureWindowsPath(input)
     if not path.is_absolute():
         return path.as_posix()
 

@@ -7,7 +7,7 @@ from .misc import powershell_quote
 from .pathconvert import linux_to_windows, windows_to_linux
 
 
-def powershell_command_executor(command, args):
+def powershell_command_executor(command: list[str], args: list[str]) -> int:
     cwd = powershell_quote(linux_to_windows(str(Path.cwd())))
     command[0] = f"Set-Location -LiteralPath {cwd}; " + command[0]
     args = list(map(powershell_quote, map(linux_to_windows, args)))
@@ -17,15 +17,15 @@ def powershell_command_executor(command, args):
     return proc.returncode
 
 
-def linux_command_executor(command, args):
+def linux_command_executor(command: list[str], args: list[str]) -> int:
     """Executes a linux command directly."""
     proc = subprocess.run(command + list(map(windows_to_linux, args)))
     return proc.returncode
 
 
-def create_command_wrapper(command, *,
-                           binary_path=Path.home().joinpath(".local", "bin"),
-                           wrapper_name=None):  # fmt: skip
+def create_command_wrapper(command: list[str], *,
+                           binary_path: Path = Path.home().joinpath(".local", "bin"),
+                           wrapper_name: str | None = None) -> Path:  # fmt: skip
     """
     Creates a shell script wrapper around command in binpath. Returns the path to it.
     If wrapper_name is unspecified, use the first element of command as the file name.

@@ -1,4 +1,7 @@
-def add_path_conversion_options(parser):
+from argparse import ArgumentParser
+
+
+def add_path_conversion_options(parser: ArgumentParser):
     """
     Adds --from-windows and --from-linux options to parser.
     """

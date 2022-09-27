@@ -1,8 +1,9 @@
+from argparse import _SubParsersAction as SubParsers, ArgumentParser
 from .misc import add_path_conversion_options
 from ..command import linux_to_windows, windows_to_linux
 
 
-def handle_convert(args):
+def handle_convert(args) -> int:
     path_mapper = linux_to_windows
     line_ender = "\n"
     if args.from_windows:
@@ -17,11 +18,11 @@ def handle_convert(args):
     return 0
 
 
-def implement_convert(parser):
+def implement_convert(subparsers: SubParsers[ArgumentParser]):
     """
     Adds convert subcommand to argument parser
     """
-    convert_parser = parser.add_parser(
+    convert_parser = subparsers.add_parser(
         "convert",
         description="Convert one or more paths.",
     )

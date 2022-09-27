@@ -4,9 +4,9 @@ from tempfile import NamedTemporaryFile
 from .pathconvert import linux_to_windows
 
 
-def save_screenshot(path):
+def save_screenshot(path: str):
     """
-    Saves screenshot in path. Path should be absolute and a string
+    Saves screenshot in path. Path should be absolute
     """
 
     script = """\

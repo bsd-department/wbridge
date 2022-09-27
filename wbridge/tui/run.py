@@ -1,3 +1,4 @@
+from argparse import _SubParsersAction as SubParsers, ArgumentParser
 from sys import stderr
 from argparse import REMAINDER
 from .misc import add_path_conversion_options
@@ -5,7 +6,7 @@ from ..misc import partition_command, skip_leading_dashes
 from ..command import powershell_command_executor, linux_command_executor
 
 
-def handle_run(args):
+def handle_run(args) -> int:
     command_executor = powershell_command_executor
     if args.from_windows:
         command_executor = linux_command_executor
@@ -19,11 +20,11 @@ def handle_run(args):
     return command_executor(*partition_command(command))
 
 
-def implement_run(parser):
+def implement_run(subparsers: SubParsers[ArgumentParser]):
     """
     Add run subcommand to argument parser
     """
-    run_parser = parser.add_parser(
+    run_parser = subparsers.add_parser(
         "run",
         description="""
         Execute a command with command line arguments converted.

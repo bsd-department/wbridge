@@ -1,4 +1,4 @@
-from argparse import REMAINDER
+from argparse import REMAINDER, _SubParsersAction as SubParsers, ArgumentParser
 from os import environ
 from pathlib import PosixPath as Path
 from sys import stderr
@@ -7,7 +7,7 @@ from ..command import create_command_wrapper
 from ..misc import skip_leading_dashes, unexpand_user
 
 
-def handle_alias(args):
+def handle_alias(args) -> int:
     command = skip_leading_dashes(args.command)
     if len(command) == 0:
         print("ERROR: Command cannot be empty.", file=stderr)
@@ -37,11 +37,11 @@ def handle_alias(args):
     return 0
 
 
-def implement_alias(parser):
+def implement_alias(subparsers: SubParsers[ArgumentParser]):
     """
     Add alias subcommand to argument parser
     """
-    alias_parser = parser.add_parser(
+    alias_parser = subparsers.add_parser(
         "alias",
         description="""\
         Create a shell script that runs specified command through WBridge
