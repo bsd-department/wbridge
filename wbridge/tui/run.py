@@ -1,4 +1,4 @@
-from argparse import _SubParsersAction as SubParsers, ArgumentParser
+from argparse import ArgumentParser
 from sys import stderr
 from argparse import REMAINDER
 from .misc import add_path_conversion_options
@@ -20,7 +20,7 @@ def handle_run(args) -> int:
     return command_executor(*partition_command(command))
 
 
-def implement_run(subparsers: SubParsers[ArgumentParser]):
+def implement_run(subparsers):
     """
     Add run subcommand to argument parser
     """

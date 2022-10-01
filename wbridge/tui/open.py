@@ -1,4 +1,3 @@
-from argparse import _SubParsersAction as SubParsers, ArgumentParser
 from ..command import powershell_command_executor
 from ..misc import partition_command
 
@@ -9,7 +8,7 @@ def handle_open(args) -> int:
     return powershell_command_executor(*partition_command(command))
 
 
-def implement_open(subparsers: SubParsers[ArgumentParser]):
+def implement_open(subparsers):
     """
     Add open subcommand to argument parser
     """

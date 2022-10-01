@@ -1,4 +1,3 @@
-from argparse import _SubParsersAction as SubParsers, ArgumentParser
 from sys import stderr
 from datetime import datetime
 from pathlib import PosixPath as Path
@@ -22,7 +21,7 @@ def handle_screenshot(args) -> int:
     return 0
 
 
-def implement_screenshot(subparsers: SubParsers[ArgumentParser]):
+def implement_screenshot(subparsers):
     """
     Adds screenshot subcommand to argument parser
     """

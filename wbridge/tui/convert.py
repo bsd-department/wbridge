@@ -1,4 +1,3 @@
-from argparse import _SubParsersAction as SubParsers, ArgumentParser
 from .misc import add_path_conversion_options
 from ..command import linux_to_windows, windows_to_linux
 
@@ -18,7 +17,7 @@ def handle_convert(args) -> int:
     return 0
 
 
-def implement_convert(subparsers: SubParsers[ArgumentParser]):
+def implement_convert(subparsers):
     """
     Adds convert subcommand to argument parser
     """

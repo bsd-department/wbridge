@@ -1,4 +1,4 @@
-from argparse import REMAINDER, _SubParsersAction as SubParsers, ArgumentParser
+from argparse import REMAINDER
 from os import environ
 from pathlib import PosixPath as Path
 from sys import stderr
@@ -37,7 +37,7 @@ def handle_alias(args) -> int:
     return 0
 
 
-def implement_alias(subparsers: SubParsers[ArgumentParser]):
+def implement_alias(subparsers):
     """
     Add alias subcommand to argument parser
     """
