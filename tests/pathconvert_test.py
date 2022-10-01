@@ -1,7 +1,8 @@
 from wbridge.pathconvert import linux_to_windows as l2w, windows_to_linux as w2l
 from wbridge.mounts import find_wsl_mounts
-from os import environ
 from unittest.mock import patch
+
+DISTRO_NAME = "Ubuntu-22.04"
 
 
 def path_conversion_ensure_equivalent(linux_path, windows_path, *, absolute=True):
@@ -10,15 +11,19 @@ def path_conversion_ensure_equivalent(linux_path, windows_path, *, absolute=True
     """
     windows_path_forward_slash = windows_path.replace("\\", "/")
 
-    assert l2w(linux_path) == windows_path
-    assert w2l(windows_path) == w2l(windows_path_forward_slash) == linux_path
+    assert l2w(linux_path, DISTRO_NAME) == windows_path
+    assert (
+        w2l(windows_path, DISTRO_NAME)
+        == w2l(windows_path_forward_slash, DISTRO_NAME)
+        == linux_path
+    )
 
     # file URLs are always absolute
     if absolute:
         windows_file_url = "file:///" + windows_path_forward_slash
         linux_file_url = "file://" + linux_path
-        assert w2l(windows_file_url) == linux_file_url
-        assert l2w(linux_file_url) == windows_file_url
+        assert w2l(windows_file_url, DISTRO_NAME) == linux_file_url
+        assert l2w(linux_file_url, DISTRO_NAME) == windows_file_url
 
 
 def test_drive_path_conversion():
@@ -32,10 +37,9 @@ def test_other_distro_path_conversion():
 
 
 def test_current_distro_path_conversion():
-    if environ.get("WSL_DISTO_NAME") is None:
-        environ["WSL_DISTRO_NAME"] = "Ubuntu-22.04"
-    distro = environ["WSL_DISTRO_NAME"]
-    path_conversion_ensure_equivalent("/etc/hosts", f"\\\\wsl$\\{distro}\\etc\\hosts")
+    path_conversion_ensure_equivalent(
+        "/etc/hosts", f"\\\\wsl$\\{DISTRO_NAME}\\etc\\hosts"
+    )
 
 
 def test_relative_path_conversion():

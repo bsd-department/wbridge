@@ -6,7 +6,15 @@ from .misc import is_url, relative_to_subdir
 from .mounts import find_wsl_mounts
 
 
-def linux_to_windows(input: str) -> str:
+def linux_to_windows(
+    input: str,
+    current_distro: str | None = environ.get("WSL_DISTRO_NAME"),
+) -> str:
+    if current_distro is None:
+        raise ValueError(
+            "Distro name has to be specified manually when WSL_DISTRO_NAME is unset."
+        )
+
     input = input.strip()
 
     # As a special case, never touch non-file URLs
@@ -38,18 +46,24 @@ def linux_to_windows(input: str) -> str:
     # When the path points to another wsl distro
     # /mnt/wsl/instances/<distro name>/path
     if relative_to_subdir(path, "/mnt/wsl/instances"):
-        distro_name = path.parts[4]
+        other_distro = path.parts[4]
         return str(
-            PureWindowsPath("\\\\wsl$\\" + distro_name).joinpath(*path.parts[5:])
+            PureWindowsPath("\\\\wsl$\\" + other_distro).joinpath(*path.parts[5:])
         )
 
     # When the path points to the current distro
-    return str(
-        PureWindowsPath("\\\\wsl$\\" + environ["WSL_DISTRO_NAME"]).joinpath(path)
-    )
+    return str(PureWindowsPath("\\\\wsl$\\" + current_distro).joinpath(path))
 
 
-def windows_to_linux(input: str) -> str:
+def windows_to_linux(
+    input: str,
+    current_distro: str | None = environ.get("WSL_DISTRO_NAME"),
+) -> str:
+    if current_distro is None:
+        raise ValueError(
+            "Distro name has to be specified manually when WSL_DISTRO_NAME is unset."
+        )
+
     input = input.strip()
 
     if is_url(input):
@@ -67,7 +81,7 @@ def windows_to_linux(input: str) -> str:
     if (mounts := find_wsl_mounts().get(path.drive)) is not None:
         path_prefix = mounts[0]
     elif (instance_path := re.search(r"^\\\\wsl\$\\(.+)$", path.drive)) is not None:
-        if instance_path[1] == environ["WSL_DISTRO_NAME"]:
+        if instance_path[1] == current_distro:
             path_prefix = "/"
         else:
             path_prefix = "/mnt/wsl/instances/" + instance_path[1]
