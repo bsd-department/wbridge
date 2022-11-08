@@ -14,7 +14,7 @@ class OpenSubCommand(SubCommand):
         Add open subcommand to argument parser
         """
 
-        open_parser = subparsers.add_parser(
+        open_parser: ArgumentParser = subparsers.add_parser(
             "open",
             description="Open a file or URL with the default handler on Windows.",
         )

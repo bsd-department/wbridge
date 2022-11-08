@@ -23,7 +23,7 @@ class RunSubCommand(SubCommand):
         """
         Add run subcommand to argument parser
         """
-        run_parser = subparsers.add_parser(
+        run_parser: ArgumentParser = subparsers.add_parser(
             "run",
             description="""
             Execute a command with command line arguments converted.
