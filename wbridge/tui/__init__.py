@@ -1,9 +1,9 @@
 from argparse import ArgumentParser
-from .convert import implement_convert
-from .open import implement_open
-from .run import implement_run
-from .screenshot import implement_screenshot
-from .alias import implement_alias
+from .alias import AliasSubCommand
+from .convert import ConvertSubCommand
+from .open import OpenSubCommand
+from .run import RunSubCommand
+from .screenshot import ScreenshotSubCommand
 
 
 def create_argument_parser() -> ArgumentParser:
@@ -13,14 +13,14 @@ def create_argument_parser() -> ArgumentParser:
 
     subparsers = parser.add_subparsers(required=True)
 
-    # fmt: off
-    for impl in [implement_run,
-                 implement_alias,
-                 implement_open,
-                 implement_screenshot,
-                 implement_convert]:
-        impl(subparsers)
-    # fmt: on
+    for c in [
+            AliasSubCommand,
+            ConvertSubCommand,
+            OpenSubCommand,
+            RunSubCommand,
+            ScreenshotSubCommand,
+    ]:
+        c(subparsers)
 
     return parser
 
